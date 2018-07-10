@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: tornado-nfs
+  namespace: tornado
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 10.103.231.245
+    path: "/exports/isoforest"
+
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: tornado-nfs
+  namespace: tornado
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
