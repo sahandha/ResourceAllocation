@@ -1,0 +1,16 @@
+{% extends template.html%}
+
+{% block content %}
+	  <div class="container">
+	    <h2>Isolation Forest</h2>
+	    <p>
+	      First you need to train your data. Upload a file containing your data in csv format.
+	    </p>
+	  <form enctype="multipart/form-data" action="/getfile" method="POST">
+	    <div class="btn-group mr-2" role="group" aria-label="Second group">
+	    <input type="file" name="filearg" value="Choose file" class="btn btn-primary"></input>
+	    </div>
+	    <input type="submit" value="Submit" class="btn btn-secondary"></input>
+	  </form>
+	  </div>
+{% end block %}

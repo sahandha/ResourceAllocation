@@ -1,0 +1,19 @@
+{% extends TrainedData.html%}
+
+
+{%block scorePoint%}
+<div class="container">
+  <div class="row">
+	  <div class="col-sm-2">
+		    <form action="/deleteproject" method="GET">
+	        <input type="submit" value="Delete Project" class="btn btn-default"></input>
+	      </form>
+    </div>
+	  <div class="col-sm-2">
+		  <form action="/newproject" method="GET">
+	      <input type="submit" value="Create New Project" class="btn btn-default"></input>
+	    </form>
+    </div>
+  </div>
+</div>
+{%end block%}
