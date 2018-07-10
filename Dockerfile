@@ -17,6 +17,6 @@ RUN pip install  matplotlib
 
 EXPOSE 8888
 
-Add iso_server /external/server
+Add server /external/server
 
 RUN apt-get install -y vim; exit 0
