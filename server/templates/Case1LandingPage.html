@@ -1,0 +1,65 @@
+{% extends template.html%}
+
+
+{% block content %}
+
+<h2 color="gray">Current users:</h2>
+<div class=well>
+<table class="table">
+  <!--thead>
+    <tr>
+      <th scope="col"></th>
+      <th scope="col"></th>
+      <th scope="col"></th>
+    </tr>
+  </thead-->
+  <tbody>
+
+    {% for user in users %}
+      <tr>
+        <td>{{escape(user)}}</td>
+        <td>job:<select class="selectpicker">
+          <option>1</option>
+          <option>2</option>
+          <option>3</option>
+        </select></td>
+        <td>
+          cpu:
+          <select class="selectpicker">
+            <option>1</option>
+            <option>2</option>
+            <option>3</option>
+          </select>
+        </td>
+        <td>
+          memory:
+          <select class="selectpicker">
+            <option>1</option>
+            <option>2</option>
+            <option>3</option>
+          </select>
+        </td>
+        <td>
+          <button type="button" class="btn btn-primary">submit job</button>
+        </td>
+      </tr>
+    {% end %}
+  </tbody>
+</table>
+</div>
+
+<div class="container">
+    <div class="row">
+        <div class="col-xs-1">
+            <form action="/case1/adduser" method="GET">
+              <input type="submit" value="Add User" class="btn btn-default"></input>
+            </form>
+        </div>
+        <div class="col-xs-1">
+            <form action="/case1/deleteuser" method="GET">
+              <input type="submit" value="Delete User" class="btn btn-default"></input>
+            </form>
+        </div>
+    </div>
+</div>
+{% end block %}

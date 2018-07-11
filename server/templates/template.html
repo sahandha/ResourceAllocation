@@ -2,8 +2,7 @@
 
 <html lang="en">
 <head>
-  <link rel="icon" href="{{static_url('images/Study-icon.png')}}" >
-  <link href="{{static_url('css/login.css')}}" rel="stylesheet" id="bootstrap-css-this">
+  <link rel="icon" href="{{static_url('images/LSST.jpg')}}" >
   <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
   <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
@@ -11,83 +10,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 
 
-  <title>Isolation Forest</title>
+  <title>Resource Allocation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
 </head>
 <body>
-
 <div class="container">
-    <div class="row">
-        <div class="col-md-3">
-              <div class="well">
-                {% block panel %}
-                {% end block %}
-              </div>
-            <!--/sidebar-nav-fixed -->
-              {% block actionButtons %}
-              {% end block %}
-            </div>
-        <!--/span-->
-        <div class="col-md-7">
-            {% block content %}
-              <div class="well">
-                <img src="{{static_url('images/EIF_logo_nobackground.png')}}"  style="width:100%;" alt="Oops">
-              </div>
-              <div class="well">
-                <img src="{{static_url('images/splash.png')}}"  style="width:100%;" alt="Oops">
-              </div>
-            {% end block %}
-
-            {% block scorePoint %}
-            {% end block %}
-
-            {% block splash %}
-            {% end block %}
-        </div>
-
-        <div class="col-md-2">
-          <div class="well">
-            <img src="{{static_url('images/sidesplash.png')}}"  style="width:100%;" alt="Oops">
-          </div>
-          <div class="well">
-            <h4 class="text-muted">Papers:</h4>
-              <small><a class="text-muted" href="{{static_url('pdfs/acm_paper_revision1.pdf')}}">deployment.pdf</a></small>
-              <small><a class="text-muted" href="{{static_url('pdfs/paper_acm_manuscript_nolinenumber.pdf')}}">algorithm.pdf</a></small>
-          </div>
-        </div>
-
+  <div class="row">
+    <div class="col-sm-1">
     </div>
-    <!--/row-->
+    <div class="col-md-10">
+      {% block content %}
+      {% end block %}
+    </div>
+    <div class="col-sm-1">
+    </div>
+  </div>
 </div>
-<!--/.fluid-container-->
-
-<!-- Footer -->
-	<section id="footer">
-		<div class="container">
-			<div class="row text-center text-xs-center text-sm-left text-md-left">
-			<div class="row">
-				<div class="col-xs-12 col-sm-12 col-md-12 mt-2 mt-sm-5">
-					<ul class="list-unstyled list-inline social text-center">
-						<li class="list-inline-item"><a href="javascript:void();"><i class="fa fa-facebook"></i></a></li>
-						<li class="list-inline-item"><a href="javascript:void();"><i class="fa fa-twitter"></i></a></li>
-						<li class="list-inline-item"><a href="javascript:void();"><i class="fa fa-google-plus"></i></a></li>
-						<li class="list-inline-item"><a href="javascript:void();" target="_blank"><i class="fa fa-envelope"></i></a></li>
-					</ul>
-				</div>
-				</hr>
-			</div>
-			<div class="row">
-				<div class="col-xs-12 col-sm-12 col-md-12 mt-2 mt-sm-2 text-center text-white">
-					<p>National Center for Supercomputing Applications at University of Illinois at Urbana-Champaign</p>
-          <p>Sahand Hariri and Matias Carrasco Kind</p>
-					<p class="h6">&copy All Rights Reversed</p>
-				</div>
-				</hr>
-			</div>
-		</div>
-	</section>
 
 </body>
-
-
 </html>

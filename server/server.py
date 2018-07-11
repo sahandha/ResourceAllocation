@@ -25,7 +25,7 @@ def Authenticate(username, password):
      userlookup = yield db.users.find({"username":username, "password":password}).to_list(length=1)
      return userlookup
 
-def CreateUser(username, password,fullname,email):
+def CreateUser(username, password, fullname, email):
     # insert user info into database
     db.users.insert_one({
     'username':username,
@@ -63,48 +63,37 @@ def getPaths(username,project):
     return(staticimages, images, trees, uploads)
 
 class MainHandler(tornado.web.RequestHandler):
-    def initialize(self):
-        self.current_user    = self.application.settings['current_user']
-        self.projects        = self.application.settings['projects']
-        self.current_project = self.application.settings['current_project']
-
     def get(self):
-        if self.current_user == 'no_user':
-            self.render('login.html',failmessage="")
-        else:
-            self.render('user_landing_page.html',
-                        username=self.current_user,
-                        projects=self.projects,
-                        current_project=self.current_project,
-                        failmessage="")
+        self.render('frontpage.html')
 
-class LoginHandler(tornado.web.RequestHandler):
-    def initialize(self, **configs):
-        self.db = self.application.settings['db']
-    @gen.coroutine
-    def post(self):
-        username = self.get_argument('lg_username')
-        password = self.get_argument('lg_password')
-        userlookup = yield Authenticate(username, password)
-
-        if userlookup:
-            projects = yield getProjects(username)
-            self.application.settings['current_user'] = username
-            self.application.settings['projects'] = projects
-            self.current_user = username
-            self.projects     = projects
-            self.redirect('/')
-        else:
-            self.render('login.html',failmessage="Invalid username or password")
-
-class LogoutHandler(tornado.web.RequestHandler):
-    def initialize(self, **configs):
-        self.application.settings['current_user'] = 'no_user'
-        self.application.settings['current_project'] = 'default'
-        self.application.settings['projects'] = []
-        self.current_user = self.application.settings['current_user']
+class Case1(tornado.web.RequestHandler):
     def get(self):
-        self.redirect('/')
+        try:
+            self.render('Case1LandingPage.html',
+                     users=['sahand','matias'])
+        except:
+            self.render('NotFound.html')
+
+class Case2(tornado.web.RequestHandler):
+    def get(self):
+        try:
+            self.render('Case2LandingPage.html',
+                    users=['sahand','matias'])
+        except:
+            self.render('NotFound.html')
+
+class Case1AddUser(tornado.web.RequestHandler):
+        def get(self):
+            try:
+                self.render('AddUser.html')
+            except:
+                self.render('NotFound.html')
+class Case1DeleteUser(tornado.web.RequestHandler):
+        def get(self):
+            try:
+                self.render('DeleteUser.html')
+            except:
+                self.render('NotFound.html')
 
 class RegisterationPage(tornado.web.RequestHandler):
     def get(self):
@@ -280,24 +269,16 @@ settings=dict(
 )
 
 application = tornado.web.Application([
-    (r"/getfile", Upload),
-    (r"/logout", LogoutHandler),
-    (r"/login", LogoutHandler),
-    (r"/logininfo", LoginHandler),
-    (r"/registerinfo", RegistrationHandler),
-    (r"/register", RegisterationPage),
-    (r"/forgot_password", ForgotPasswordHandler),
-    (r"/projectload.*", ProjectLoader),
-    (r"/deleteproject", DeleteProject),
-    (r"/newproject", NewProject),
-    (r"/scorepoint", ScorePoint),
-    (r"/scoredata", ScoreData),
+    (r"/case1", Case1),
+    (r"/case2", Case2),
+    (r"/case1/adduser", Case1AddUser),
+    (r"/case1/deleteuser", Case1DeleteUser),
     (r"/projectload(.*)",tornado.web.StaticFileHandler, {"path": "./static"}),
     (r"/", MainHandler)
 ],**settings)
 
 if __name__=="__main__":
-    print("server running...")
+    print("server running at localhost:8888 ...")
     print("press ctrl+c to close.")
     application.listen(8888)
     tornado.ioloop.IOLoop.instance().start()
