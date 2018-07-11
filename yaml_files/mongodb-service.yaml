@@ -1,8 +1,0 @@
-kind: Service
-apiVersion: v1
-metadata:
-  name: mongodb
-  namespace: resourceallocation
-spec:
-  type: ExternalName
-  externalName: mongodb.mongodb.svc.cluster.local
