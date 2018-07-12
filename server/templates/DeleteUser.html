@@ -1,0 +1,27 @@
+{% extends template.html %}
+
+
+{% block content %}
+
+<h2 color="gray">Choose users to delete:</h2>
+<form id=deleteusers action='/case1/deleteusers', method="POST">
+<div class="form-check">
+<div class=well>
+<table class="table">
+  <tbody>
+    {% for user in users %}
+    <tr>
+      <td>
+          <input class="form-check-input" type="checkbox" value=""  id="defaultCheck1">
+      </td>
+      <td>{{escape(user)}}</td>
+    </tr>
+    {% end %}
+  </tbody>
+</table>
+</div>
+<button type="submit" class="login-button">submit<submit</button>
+</div>
+</form>
+
+{% end block %}

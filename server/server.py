@@ -18,105 +18,120 @@ __RESOURCE__ = os.path.join(os.path.dirname(__file__),"resources/")
 __USERS__ = os.path.join(os.path.dirname(__file__),"static/users/")
 
 
-db = motor.motor_tornado.MotorClient().IsolationForest
+db1 = motor.motor_tornado.MotorClient().ReourceAllocationCase1
+db2 = motor.motor_tornado.MotorClient().ReourceAllocationCase2
 
-@gen.coroutine
-def Authenticate(username, password):
-     userlookup = yield db.users.find({"username":username, "password":password}).to_list(length=1)
-     return userlookup
-
-def CreateUser(username, password, fullname, email):
+def CreateUser(db, username, namespace, email, cpulimit, memlimit):
     # insert user info into database
     db.users.insert_one({
     'username':username,
-    'password':password,
-    'fullname':fullname,
+    'namespace':namespace,
     'email':email,
-    'projects':[]
+    'cpulimit':cpulimit,
+    'memlimit':memlimit
     })
 
-    # create appropriate directories for each user
-    userdir = __USERS__+"/"+username
-    if not os.path.exists(userdir):
-        os.makedirs(userdir)
-
-def DeleteProjectFolder(username, project):
+def DeleteProjectFolder(db, username, project):
     dir = __USERS__+"/"+username+"/"+project
     if os.path.exists(dir):
         rmtree(dir)
 
 @gen.coroutine
-def getProjects(username):
-    doc = yield db.users.find({"username":username}).to_list(length=1)
-    return doc[0]["projects"]
+def getUsers(db):
+    try:
+        doc = yield db.users.find({},{"_id": 0 ,"username": 1 }).to_list(length=100)
+        users = [l["username"] for l in doc]
+    except:
+        users = []
+    return users
 
-@gen.coroutine
-def Updatedb(username,field,newvalue):
-    result = yield db.users.update_one({ "username":username }, { "$set" : {field:newvalue} })
 
-def getPaths(username,project):
-    basepath = __USERS__+username+"/"+project
-    staticimages  = "users/"+username+"/"+project+"/images"
-    images  = basepath+"/"+"images"
-    trees   = basepath+"/"+"trees"
-    uploads = basepath+"/"+"uploads"
-    return(staticimages, images, trees, uploads)
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
         self.render('frontpage.html')
 
 class Case1(tornado.web.RequestHandler):
+    @gen.coroutine
     def get(self):
+        users = yield getUsers(db1)
         try:
             self.render('Case1LandingPage.html',
-                     users=['sahand','matias'])
-        except:
-            self.render('NotFound.html')
+                        users=users)
+        except Exception as e:
+            self.render('NotFound.html', errormessage="{}".format(e))
 
-class Case2(tornado.web.RequestHandler):
-    def get(self):
-        try:
-            self.render('Case2LandingPage.html',
-                    users=['sahand','matias'])
-        except:
-            self.render('NotFound.html')
+
 
 class Case1AddUser(tornado.web.RequestHandler):
         def get(self):
             try:
-                self.render('AddUser.html')
-            except:
-                self.render('NotFound.html')
+                self.render('AddUser.html', failmessage="", uri='/case1/registeruser')
+            except Exception as e:
+                self.render('NotFound.html', errormessage="{}".format(e))
+
 class Case1DeleteUser(tornado.web.RequestHandler):
+        @gen.coroutine
         def get(self):
+            users = yield getUsers(db1)
             try:
-                self.render('DeleteUser.html')
-            except:
-                self.render('NotFound.html')
+                self.render('DeleteUser.html',users=users)
+            except Exception as e:
+                self.render('NotFound.html', errormessage="{}".format(e))
 
-class RegisterationPage(tornado.web.RequestHandler):
-    def get(self):
-        self.render('register.html',failmessage='')
-
-class RegistrationHandler(tornado.web.RequestHandler):
+class Case1RegistrationHandler(tornado.web.RequestHandler):
 
     def post(self):
-        username = self.get_argument('reg_username')
-        password = self.get_argument('reg_password')
-        passwdco = self.get_argument('reg_password_confirm')
-        email    = self.get_argument('reg_email')
-        fullname = self.get_argument('reg_fullname')
-        if password == passwdco:
+        try:
+            username  = self.get_argument('username')
+            namespace = self.get_argument('namespace')
+            email     = self.get_argument('email')
+            cpulimit  = self.get_argument('cpulimit')
+            memlimit  = self.get_argument('memlimit')
+            CreateUser(db1, username, namespace, email, cpulimit, memlimit)
+            self.redirect('/case1')
+        except Exception as e:
+            self.render('AddUser.html',failmessage="User Was not created. {}. Try Again.".format(e))
+
+class Case2(tornado.web.RequestHandler):
+    @gen.coroutine
+    def get(self):
+        try:
+            users = yield getUsers(db2)
+            self.render('Case2LandingPage.html',
+                    users=users)
+        except Exception as e:
+            self.render('NotFound.html',errormessage="{}".format(e))
+
+class Case2AddUser(tornado.web.RequestHandler):
+        def get(self):
             try:
-                CreateUser(username, password,fullname,email)
-            except:
-                self.render('register.html',failmessage='Error creating user account')
-            self.application.settings['current_user'] = username
-            self.current_user = self.application.settings['current_user']
-            self.redirect('/')
-        else:
-            self.render('register.html',failmessage='Password does not match')
+                self.render('AddUser.html', failmessage="", uri='/case2/registeruser')
+            except Exception as e:
+                self.render('NotFound.html', errormessage="{}".format(e))
+
+
+class Case2DeleteUser(tornado.web.RequestHandler):
+        @gen.coroutine
+        def get(self):
+            users = yield getUsers(db1)
+            try:
+                self.render('DeleteUser.html',users=users)
+            except Exception as e:
+                self.render('NotFound.html', errormessage="{}".format(e))
+
+class Case2RegistrationHandler(tornado.web.RequestHandler):
+    def post(self):
+        try:
+            username  = self.get_argument('username')
+            namespace = self.get_argument('namespace')
+            email     = self.get_argument('email')
+            cpulimit  = self.get_argument('cpulimit')
+            memlimit  = self.get_argument('memlimit')
+            CreateUser(db2, username, namespace, email, cpulimit, memlimit)
+            self.redirect('/case2')
+        except Exception as e:
+            self.render('AddUser.html',failmessage="User Was not created. {}. Try Again.".format(e))
 
 class ForgotPasswordHandler(tornado.web.RequestHandler):
     def get(self):
@@ -264,15 +279,21 @@ settings=dict(
     current_user='no_user',
     projects=[],
     current_project='default',
-    db=db,
+    db1=db1,
+    db2=db2,
+    users=[],
     debug=True
 )
 
 application = tornado.web.Application([
     (r"/case1", Case1),
-    (r"/case2", Case2),
     (r"/case1/adduser", Case1AddUser),
     (r"/case1/deleteuser", Case1DeleteUser),
+    (r"/case1/registeruser", Case1RegistrationHandler),
+    (r"/case2", Case2),
+    (r"/case2/adduser", Case2AddUser),
+    (r"/case2/deleteuser", Case2DeleteUser),
+    (r"/case2/registeruser", Case2RegistrationHandler),
     (r"/projectload(.*)",tornado.web.StaticFileHandler, {"path": "./static"}),
     (r"/", MainHandler)
 ],**settings)
