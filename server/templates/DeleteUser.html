@@ -4,7 +4,7 @@
 {% block content %}
 
 <h2 color="gray">Choose users to delete:</h2>
-<form id=deleteusers action='/case1/deleteusers', method="POST">
+<form id=deleteusers action={{escape(uri)}} method="GET">
 <div class="form-check">
 <div class=well>
 <table class="table">
@@ -12,7 +12,7 @@
     {% for user in users %}
     <tr>
       <td>
-          <input class="form-check-input" type="checkbox" value=""  id="defaultCheck1">
+          <input class="form-check-input" type="checkbox" value=""  id={{escape(user)}} name={{escape(user)}}>
       </td>
       <td>{{escape(user)}}</td>
     </tr>

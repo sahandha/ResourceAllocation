@@ -5,7 +5,7 @@ import os
 from shutil import rmtree
 import motor.motor_tornado
 from tornado import gen
-
+import deploy_jobs
 
 
 __ROOT__     = os.path.join(os.path.dirname(__file__))
@@ -31,10 +31,9 @@ def CreateUser(db, username, namespace, email, cpulimit, memlimit):
     'memlimit':memlimit
     })
 
-def DeleteProjectFolder(db, username, project):
-    dir = __USERS__+"/"+username+"/"+project
-    if os.path.exists(dir):
-        rmtree(dir)
+def DeleteUsers(db, usernames):
+    for user in usernames:
+        db.users.delete_one({"username":user})
 
 @gen.coroutine
 def getUsers(db):
@@ -61,8 +60,6 @@ class Case1(tornado.web.RequestHandler):
         except Exception as e:
             self.render('NotFound.html', errormessage="{}".format(e))
 
-
-
 class Case1AddUser(tornado.web.RequestHandler):
         def get(self):
             try:
@@ -75,7 +72,24 @@ class Case1DeleteUser(tornado.web.RequestHandler):
         def get(self):
             users = yield getUsers(db1)
             try:
-                self.render('DeleteUser.html',users=users)
+                self.render('DeleteUser.html',users=users, uri='/case1/deleteselectedusers')
+            except Exception as e:
+                self.render('NotFound.html', errormessage="{}".format(e))
+
+class Case1DeleteSelectedUsers(tornado.web.RequestHandler):
+        @gen.coroutine
+        def get(self):
+            users = yield getUsers(db1)
+            tobedeleted=[]
+            try:
+                for user in users:
+                    try:
+                        self.get_argument(user)
+                        tobedeleted.append(user)
+                    except:
+                        pass
+                DeleteUsers(db1, tobedeleted)
+                self.redirect('/case1')
             except Exception as e:
                 self.render('NotFound.html', errormessage="{}".format(e))
 
@@ -114,9 +128,27 @@ class Case2AddUser(tornado.web.RequestHandler):
 class Case2DeleteUser(tornado.web.RequestHandler):
         @gen.coroutine
         def get(self):
-            users = yield getUsers(db1)
+            users = yield getUsers(db2)
             try:
-                self.render('DeleteUser.html',users=users)
+                self.render('DeleteUser.html',users=users, uri='/case2/deleteselectedusers')
+            except Exception as e:
+                self.render('NotFound.html', errormessage="{}".format(e))
+
+
+class Case2DeleteSelectedUsers(tornado.web.RequestHandler):
+        @gen.coroutine
+        def get(self):
+            users = yield getUsers(db2)
+            tobedeleted=[]
+            try:
+                for user in users:
+                    try:
+                        self.get_argument(user)
+                        tobedeleted.append(user)
+                    except:
+                        pass
+                DeleteUsers(db2, tobedeleted)
+                self.redirect('/case2')
             except Exception as e:
                 self.render('NotFound.html', errormessage="{}".format(e))
 
@@ -132,6 +164,8 @@ class Case2RegistrationHandler(tornado.web.RequestHandler):
             self.redirect('/case2')
         except Exception as e:
             self.render('AddUser.html',failmessage="User Was not created. {}. Try Again.".format(e))
+
+#================================================>
 
 class ForgotPasswordHandler(tornado.web.RequestHandler):
     def get(self):
@@ -289,10 +323,12 @@ application = tornado.web.Application([
     (r"/case1", Case1),
     (r"/case1/adduser", Case1AddUser),
     (r"/case1/deleteuser", Case1DeleteUser),
+    (r"/case1/deleteselectedusers", Case1DeleteSelectedUsers),
     (r"/case1/registeruser", Case1RegistrationHandler),
     (r"/case2", Case2),
     (r"/case2/adduser", Case2AddUser),
     (r"/case2/deleteuser", Case2DeleteUser),
+    (r"/case2/deleteselectedusers", Case2DeleteSelectedUsers),
     (r"/case2/registeruser", Case2RegistrationHandler),
     (r"/projectload(.*)",tornado.web.StaticFileHandler, {"path": "./static"}),
     (r"/", MainHandler)
