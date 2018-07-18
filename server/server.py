@@ -5,7 +5,7 @@ import os
 from shutil import rmtree
 import motor.motor_tornado
 from tornado import gen
-import deploy_jobs
+import kube_deploy as kd
 
 
 __ROOT__     = os.path.join(os.path.dirname(__file__))
@@ -31,9 +31,17 @@ def CreateUser(db, username, namespace, email, cpulimit, memlimit):
     'memlimit':memlimit
     })
 
+    # Create namespace
+    kd.create_namespace(namespace)
+    kd.create_limitrange(namespace, maxmem=memlimit, maxcpu=cpulimit)
+
+@gen.coroutine
 def DeleteUsers(db, usernames):
+    doc = yield db.users.find({},{"_id": 0 ,"username": 1, "namespace": 1 }).to_list(length=100)
     for user in usernames:
-        db.users.delete_one({"username":user})
+        doc = yield db.users.find({"username":user},{"_id": 0 ,"username": 1, "namespace": 1 }).to_list(length=1)
+        db.users.delete_one({"username":doc[0]["username"]})
+        kd.delete_namespace(doc[0]["namespace"])
 
 @gen.coroutine
 def getUsers(db):
@@ -57,6 +65,16 @@ class Case1(tornado.web.RequestHandler):
         try:
             self.render('Case1LandingPage.html',
                         users=users)
+        except Exception as e:
+            self.render('NotFound.html', errormessage="{}".format(e))
+
+class Case1JobSubmit(tornado.web.RequestHandler):
+    @gen.coroutine
+    def post(self):
+        try:
+            username=self.get_argument("sahandcpu")
+            print("================>",username)
+            self.redirect('/case1')
         except Exception as e:
             self.render('NotFound.html', errormessage="{}".format(e))
 
@@ -124,7 +142,6 @@ class Case2AddUser(tornado.web.RequestHandler):
             except Exception as e:
                 self.render('NotFound.html', errormessage="{}".format(e))
 
-
 class Case2DeleteUser(tornado.web.RequestHandler):
         @gen.coroutine
         def get(self):
@@ -133,7 +150,6 @@ class Case2DeleteUser(tornado.web.RequestHandler):
                 self.render('DeleteUser.html',users=users, uri='/case2/deleteselectedusers')
             except Exception as e:
                 self.render('NotFound.html', errormessage="{}".format(e))
-
 
 class Case2DeleteSelectedUsers(tornado.web.RequestHandler):
         @gen.coroutine
@@ -325,6 +341,7 @@ application = tornado.web.Application([
     (r"/case1/deleteuser", Case1DeleteUser),
     (r"/case1/deleteselectedusers", Case1DeleteSelectedUsers),
     (r"/case1/registeruser", Case1RegistrationHandler),
+    (r"/case1/jobsubmit", Case1JobSubmit),
     (r"/case2", Case2),
     (r"/case2/adduser", Case2AddUser),
     (r"/case2/deleteuser", Case2DeleteUser),
