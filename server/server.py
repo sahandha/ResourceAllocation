@@ -36,6 +36,12 @@ def CreateUser(db, username, namespace, email, cpulimit, memlimit):
     kd.create_limitrange(namespace, maxmem=memlimit, maxcpu=cpulimit)
 
 @gen.coroutine
+def submitjob(db,user,cpulim, memlim):
+    doc = yield db.users.find({'username':user}).to_list(length=1)
+    namespace=doc[0]["namespace"]
+    kd.create_deployment(namespace,"name", cpulim, memlim)
+
+@gen.coroutine
 def DeleteUsers(db, usernames):
     doc = yield db.users.find({},{"_id": 0 ,"username": 1, "namespace": 1 }).to_list(length=100)
     for user in usernames:
@@ -72,8 +78,10 @@ class Case1JobSubmit(tornado.web.RequestHandler):
     @gen.coroutine
     def post(self):
         try:
-            username=self.get_argument("sahandcpu")
-            print("================>",username)
+            user = self.get_argument("user")
+            cpulim=self.get_argument(user+"cpu")
+            memlim=self.get_argument(user+"mem")
+            submitjob(db1,user,cpulim,memlim)
             self.redirect('/case1')
         except Exception as e:
             self.render('NotFound.html', errormessage="{}".format(e))

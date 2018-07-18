@@ -50,7 +50,7 @@ def create_limitrange(namespace, maxmem="500Mi", maxcpu="3"):
     except ApiException as e:
         print("Exception when calling CoreV1Api->create_namespaced_limit_range: %s\n" % e)
 
-def create_deployment(namespace, name, memlim, cpulim):
+def create_deployment(namespace, name, cpulim, memlim):
     try:
         config.load_kube_config()
     except:

@@ -16,7 +16,11 @@
     {% for user in users %}
       <form action="/case1/jobsubmit" method="POST" name="myform">
       <tr>
-        <td>{{escape(user)}}</td>
+        <td>{{escape(user)}}
+          <div style="display: none;">
+            <input name="user" value={{escape(user)}}></input>
+          </div>
+        </td>
         <td>
           <div class="text-center"><p>cpu count:</p>
             <select class="selectpicker">
@@ -27,18 +31,18 @@
         </div>
         <td>
           <div class="text-center">cpu (MilliCPU):
-            <div id="divnode" class="knob" min=0 max=1000 value=200 step=10>
-              <div>
-                <input id="{{escape(user)}}cpu" name="{{escape(user)}}cpu"></input>
+            <div class="knob" min=0 max=999 value=200 step=10>
+              <div style="display: none;">
+                <input name="{{escape(user)}}cpu"></input>
               </div>
             </div>
           </div>
         </td>
         <td>
-          <div id="oneabove" class="text-center">memory (Mi):
-            <div id="knob" class="knob" min=100 max=500 value=350 step=5>
+          <div class="text-center">memory (Mi):
+            <div class="knob" min=100 max=500 value=350 step=5>
               <div style="display: none;">
-                <input id="{{escape(user)}}mem" class="memlim">
+                <input name="{{escape(user)}}mem"></input>
               </div>
             </div>
           </div>
