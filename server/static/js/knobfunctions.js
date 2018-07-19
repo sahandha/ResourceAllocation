@@ -15,8 +15,9 @@ function makeKnob(elem) {
   var max = elem.getAttribute("max")
   var val = elem.getAttribute("value")
   var stepSize = elem.getAttribute("step")
+  var size = elem.getAttribute("size")
 
-  var knob = pureknob.createKnob(50, 50);
+  var knob = pureknob.createKnob(size, size);
 
   // Set properties.
   knob.setProperty('angleStart', -0.75 * Math.PI);

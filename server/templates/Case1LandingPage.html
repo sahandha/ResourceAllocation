@@ -2,55 +2,55 @@
 
 {% block content %}
 
-<h2><font color="gray">Current users:</font></h2>
+<h2><font color="gray">Deploy Jobs:</font></h2>
 <div class=well>
 <table class="table">
   <thead>
     <tr>
-      <th scope="col"></th>
-      <th scope="col"></th>
-      <th scope="col"></th>
+      <th scope="col">Users</th>
+      <th scope="col">Job Name</th>
+      <th scope="col" class="text-center">CPU (milli cpu)</th>
+      <th scope="col" class="text-center">Memory (Mi)</th>
     </tr>
   </thead>
   <tbody>
-    {% for user in users %}
+    {% for (user,cpulim,memlim) in userdata %}
       <form action="/case1/jobsubmit" method="POST" name="myform">
       <tr>
-        <td>{{escape(user)}}
+        <td class="align-middle">{{escape(user)}}
           <div style="display: none;">
             <input name="user" value={{escape(user)}}></input>
           </div>
+          <div>
+            <font size=1, color="gray">
+              cpu limit: {{escape(cpulim)}} m
+              </font>
+            </div>
+          <div>
+            <font size=1, color="gray">
+              memory limit: {{escape(memlim)}} Mi
+              </font>
+          </div>
         </td>
-        <td>
-          <div class="text-center"><p>cpu count:</p>
-            <select class="selectpicker">
-            <option>1</option>
-            <option>2</option>
-            <option>3</option>
-          </select></td>
-        </div>
-        <td>
-          <div class="text-center">cpu (MilliCPU):
-            <div class="knob" min=0 max=999 value=200 step=10>
-              <div style="display: none;">
-                <input name="{{escape(user)}}cpu"></input>
-              </div>
+        <td class="align-middle">
+            <input name="{{escape(user)}}job"></select>
+          </td>
+        <td class="text-center align-middle">
+          <div class="knob" min=100 max={{escape(cpulim)}} value=150 step=10 size=50>
+            <div style="display: none;">
+              <input name="{{escape(user)}}cpu"></input>
             </div>
           </div>
         </td>
-        <td>
-          <div class="text-center">memory (Mi):
-            <div class="knob" min=100 max=500 value=350 step=5>
-              <div style="display: none;">
-                <input name="{{escape(user)}}mem"></input>
-              </div>
+        <td class="text-center align-middle">
+          <div class="knob" min=100 max={{escape(memlim)}} value=150 step=5 size=50>
+            <div style="display: none;">
+              <input name="{{escape(user)}}mem"></input>
             </div>
           </div>
         </td>
-        <td>
-          <div class="text-center">
-              <input id="{{escape(user)}}submit" type="submit" value="Submit Job" class="btn btn-primary"></input>
-          </div>
+        <td class="text-center align-middle">
+            <input id="{{escape(user)}}submit" type="submit" value="Submit Job" class="btn btn-primary"></input>
         </td>
       </tr>
     </form>

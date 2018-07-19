@@ -1,50 +1,59 @@
 {% extends template.html%}
 
-
 {% block content %}
 
-<h2><font color=gray>Current users:</font></h2>
+<h2><font color="gray">Deploy Jobs:</font></h2>
 <div class=well>
 <table class="table">
-  <!--thead>
+  <thead>
     <tr>
-      <th scope="col"></th>
-      <th scope="col"></th>
-      <th scope="col"></th>
+      <th scope="col">Users</th>
+      <th scope="col">Job Name</th>
+      <th scope="col" class="text-center">CPU (milli cpu)</th>
+      <th scope="col" class="text-center">Memory (Mi)</th>
     </tr>
-  </thead-->
+  </thead>
   <tbody>
-
-    {% for user in users %}
+    {% for (user,cpulim,memlim) in userdata %}
+      <form action="/case2/jobsubmit" method="POST" name="myform">
       <tr>
-        <td>{{escape(user)}}</td>
-        <td>job:<select class="selectpicker">
-          <option>1</option>
-          <option>2</option>
-          <option>3</option>
-        </select></td>
-        <td>
-          cpu:
-          <select class="selectpicker">
-            <option>1</option>
-            <option>2</option>
-            <option>3</option>
-          </select>
+        <td class="align-middle">{{escape(user)}}
+          <div style="display: none;">
+            <input name="user" value={{escape(user)}}></input>
+          </div>
+          <div>
+            <font size=1, color="gray">
+              cpu limit: {{escape(cpulim)}} m
+              </font>
+            </div>
+          <div>
+            <font size=1, color="gray">
+              memory limit: {{escape(memlim)}} Mi
+              </font>
+          </div>
         </td>
-        <td>
-          memory:
-          <select class="selectpicker">
-            <option>100Mi</option>
-            <option>200Mi</option>
-            <option>300Mi</option>
-            <option>400Mi</option>
-            <option>500Mi</option>
-          </select>
+        <td class="align-middle">
+            <input name="{{escape(user)}}job"></select>
+          </td>
+        <td class="text-center align-middle">
+          <div class="knob" min=100 max={{escape(cpulim)}} value=150 step=10 size=50>
+            <div style="display: none;">
+              <input name="{{escape(user)}}cpu"></input>
+            </div>
+          </div>
         </td>
-        <td>
-          <button type="button" class="btn btn-primary">submit job</button>
+        <td class="text-center align-middle">
+          <div class="knob" min=100 max={{escape(memlim)}} value=150 step=5 size=50>
+            <div style="display: none;">
+              <input name="{{escape(user)}}mem"></input>
+            </div>
+          </div>
+        </td>
+        <td class="text-center align-middle">
+            <input id="{{escape(user)}}submit" type="submit" value="Submit Job" class="btn btn-primary"></input>
         </td>
       </tr>
+    </form>
     {% end %}
   </tbody>
 </table>
@@ -54,14 +63,16 @@
     <div class="row">
         <div class="col-xs-1">
             <form action="/case2/adduser" method="GET">
-              <input type="submit" value="Add User" class="btn btn-default"></input>
+              <input id="adduser" type="submit" value="Add User" class="btn btn-default"></input>
             </form>
         </div>
         <div class="col-xs-1">
             <form action="/case2/deleteuser" method="GET">
-              <input type="submit" value="Delete User" class="btn btn-default"></input>
+              <input id="deluser" type="submit" value="Delete Users" class="btn btn-default"></input>
             </form>
         </div>
     </div>
 </div>
+
+
 {% end block %}

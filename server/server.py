@@ -21,43 +21,74 @@ __USERS__ = os.path.join(os.path.dirname(__file__),"static/users/")
 db1 = motor.motor_tornado.MotorClient().ReourceAllocationCase1
 db2 = motor.motor_tornado.MotorClient().ReourceAllocationCase2
 
-def CreateUser(db, username, namespace, email, cpulimit, memlimit):
+def CreateUser1(db, username, namespace, cpulimit, memlimit):
     # insert user info into database
     db.users.insert_one({
     'username':username,
     'namespace':namespace,
-    'email':email,
     'cpulimit':cpulimit,
     'memlimit':memlimit
     })
 
     # Create namespace
     kd.create_namespace(namespace)
-    kd.create_limitrange(namespace, maxmem=memlimit, maxcpu=cpulimit)
+    kd.create_limitrange(namespace, maxmem=memlimit+'Mi', maxcpu=cpulimit+'m')
+
+def CreateUser2(db, username, cpulimit, memlimit):
+    # insert user info into database
+    db.users.insert_one({
+    'username':username,
+    'cpulimit':cpulimit,
+    'memlimit':memlimit
+    })
+
 
 @gen.coroutine
-def submitjob(db,user,cpulim, memlim):
+def submitjob1(db,user,jobid,cpulim, memlim):
     doc = yield db.users.find({'username':user}).to_list(length=1)
     namespace=doc[0]["namespace"]
-    kd.create_deployment(namespace,"name", cpulim, memlim)
+    print("namespace ======>>>>", namespace)
+    print("jobid ==========>>>>", jobid)
+    print("cpulim =========>>>>", cpulim)
+    print("memlim =========>>>>", memlim)
+    kd.create_deployment(namespace, jobid, cpulim+"m", memlim+"Mi")
 
 @gen.coroutine
-def DeleteUsers(db, usernames):
-    doc = yield db.users.find({},{"_id": 0 ,"username": 1, "namespace": 1 }).to_list(length=100)
+def submitjob2(db,user,jobid,cpureq, memreq):
+    doc = yield db.users.find({'username':user}).to_list(length=1)
+    cpulim=doc[0]["cpulimit"]
+    memlim=doc[0]["memlimit"]
+    print("jobid ==========>>>>", jobid)
+    print("cpulim =========>>>>", cpulim)
+    print("memlim =========>>>>", memlim)
+    print("cpureq =========>>>>", cpureq)
+    print("memreq =========>>>>", memreq)
+    namespace = jobid+"-ns"
+    kd.create_namespace(namespace)
+    kd.create_limitrange(namespace, maxmem=memlim+'Mi', maxcpu=cpulim+'m')
+    kd.create_deployment(namespace, jobid, cpureq+"m", memreq+"Mi")
+
+@gen.coroutine
+def DeleteUsers1(db, usernames):
     for user in usernames:
         doc = yield db.users.find({"username":user},{"_id": 0 ,"username": 1, "namespace": 1 }).to_list(length=1)
         db.users.delete_one({"username":doc[0]["username"]})
         kd.delete_namespace(doc[0]["namespace"])
 
 @gen.coroutine
-def getUsers(db):
-    try:
-        doc = yield db.users.find({},{"_id": 0 ,"username": 1 }).to_list(length=100)
-        users = [l["username"] for l in doc]
-    except:
-        users = []
-    return users
+def DeleteUsers2(db, usernames):
+    for user in usernames:
+        doc = yield db.users.find({"username":user},{"_id": 0 ,"username": 1}).to_list(length=1)
+        db.users.delete_one({"username":doc[0]["username"]})
 
+@gen.coroutine
+def getUserData(db):
+    try:
+        doc = yield db.users.find({},{"_id": 0 ,"username": 1, "cpulimit": 1, "memlimit": 1 }).to_list(length=100)
+        userdata = [(l["username"],l["cpulimit"],l["memlimit"]) for l in doc]
+    except:
+        userdata = []
+    return userdata
 
 
 class MainHandler(tornado.web.RequestHandler):
@@ -67,10 +98,10 @@ class MainHandler(tornado.web.RequestHandler):
 class Case1(tornado.web.RequestHandler):
     @gen.coroutine
     def get(self):
-        users = yield getUsers(db1)
+        userdata = yield getUserData(db1)
         try:
             self.render('Case1LandingPage.html',
-                        users=users)
+                        userdata=userdata)
         except Exception as e:
             self.render('NotFound.html', errormessage="{}".format(e))
 
@@ -78,10 +109,11 @@ class Case1JobSubmit(tornado.web.RequestHandler):
     @gen.coroutine
     def post(self):
         try:
-            user = self.get_argument("user")
+            user  = self.get_argument("user")
+            jobid = self.get_argument(user+"job")
             cpulim=self.get_argument(user+"cpu")
             memlim=self.get_argument(user+"mem")
-            submitjob(db1,user,cpulim,memlim)
+            submitjob1(db1,user,jobid,cpulim,memlim)
             self.redirect('/case1')
         except Exception as e:
             self.render('NotFound.html', errormessage="{}".format(e))
@@ -96,16 +128,18 @@ class Case1AddUser(tornado.web.RequestHandler):
 class Case1DeleteUser(tornado.web.RequestHandler):
         @gen.coroutine
         def get(self):
-            users = yield getUsers(db1)
+            userdata = yield getUserData(db1)
+            users = [l[0] for l in userdata]
             try:
-                self.render('DeleteUser.html',users=users, uri='/case1/deleteselectedusers')
+                self.render('DeleteUser.html', users=users, uri='/case1/deleteselectedusers')
             except Exception as e:
                 self.render('NotFound.html', errormessage="{}".format(e))
 
 class Case1DeleteSelectedUsers(tornado.web.RequestHandler):
         @gen.coroutine
         def get(self):
-            users = yield getUsers(db1)
+            userdata = yield getUserData(db1)
+            users = [l[0] for l in userdata]
             tobedeleted=[]
             try:
                 for user in users:
@@ -114,7 +148,7 @@ class Case1DeleteSelectedUsers(tornado.web.RequestHandler):
                         tobedeleted.append(user)
                     except:
                         pass
-                DeleteUsers(db1, tobedeleted)
+                DeleteUsers1(db1, tobedeleted)
                 self.redirect('/case1')
             except Exception as e:
                 self.render('NotFound.html', errormessage="{}".format(e))
@@ -125,10 +159,9 @@ class Case1RegistrationHandler(tornado.web.RequestHandler):
         try:
             username  = self.get_argument('username')
             namespace = self.get_argument('namespace')
-            email     = self.get_argument('email')
             cpulimit  = self.get_argument('cpulimit')
             memlimit  = self.get_argument('memlimit')
-            CreateUser(db1, username, namespace, email, cpulimit, memlimit)
+            CreateUser1(db1, username, namespace, cpulimit, memlimit)
             self.redirect('/case1')
         except Exception as e:
             self.render('AddUser.html',failmessage="User Was not created. {}. Try Again.".format(e))
@@ -137,23 +170,38 @@ class Case2(tornado.web.RequestHandler):
     @gen.coroutine
     def get(self):
         try:
-            users = yield getUsers(db2)
+            userdata = yield getUserData(db2)
             self.render('Case2LandingPage.html',
-                    users=users)
+                    userdata=userdata)
         except Exception as e:
             self.render('NotFound.html',errormessage="{}".format(e))
+
+class Case2JobSubmit(tornado.web.RequestHandler):
+    @gen.coroutine
+    def post(self):
+        try:
+            user  = self.get_argument("user")
+            jobid = self.get_argument(user+"job")
+            cpureq=self.get_argument(user+"cpu")
+            memreq=self.get_argument(user+"mem")
+            submitjob2(db2,user,jobid,cpureq,memreq)
+            self.redirect('/case2')
+        except Exception as e:
+            self.render('NotFound.html', errormessage="{}".format(e))
+
 
 class Case2AddUser(tornado.web.RequestHandler):
         def get(self):
             try:
-                self.render('AddUser.html', failmessage="", uri='/case2/registeruser')
+                self.render('Case2AddUser.html', failmessage="", uri='/case2/registeruser')
             except Exception as e:
                 self.render('NotFound.html', errormessage="{}".format(e))
 
 class Case2DeleteUser(tornado.web.RequestHandler):
         @gen.coroutine
         def get(self):
-            users = yield getUsers(db2)
+            userdata = yield getUserData(db2)
+            users = [l[0] for l in userdata]
             try:
                 self.render('DeleteUser.html',users=users, uri='/case2/deleteselectedusers')
             except Exception as e:
@@ -162,7 +210,8 @@ class Case2DeleteUser(tornado.web.RequestHandler):
 class Case2DeleteSelectedUsers(tornado.web.RequestHandler):
         @gen.coroutine
         def get(self):
-            users = yield getUsers(db2)
+            userdata = yield getUserData(db2)
+            users = [l[0] for l in userdata]
             tobedeleted=[]
             try:
                 for user in users:
@@ -171,7 +220,7 @@ class Case2DeleteSelectedUsers(tornado.web.RequestHandler):
                         tobedeleted.append(user)
                     except:
                         pass
-                DeleteUsers(db2, tobedeleted)
+                DeleteUsers2(db2, tobedeleted)
                 self.redirect('/case2')
             except Exception as e:
                 self.render('NotFound.html', errormessage="{}".format(e))
@@ -180,11 +229,9 @@ class Case2RegistrationHandler(tornado.web.RequestHandler):
     def post(self):
         try:
             username  = self.get_argument('username')
-            namespace = self.get_argument('namespace')
-            email     = self.get_argument('email')
             cpulimit  = self.get_argument('cpulimit')
             memlimit  = self.get_argument('memlimit')
-            CreateUser(db2, username, namespace, email, cpulimit, memlimit)
+            CreateUser2(db2, username, cpulimit, memlimit)
             self.redirect('/case2')
         except Exception as e:
             self.render('AddUser.html',failmessage="User Was not created. {}. Try Again.".format(e))
@@ -355,6 +402,7 @@ application = tornado.web.Application([
     (r"/case2/deleteuser", Case2DeleteUser),
     (r"/case2/deleteselectedusers", Case2DeleteSelectedUsers),
     (r"/case2/registeruser", Case2RegistrationHandler),
+    (r"/case2/jobsubmit", Case2JobSubmit),
     (r"/projectload(.*)",tornado.web.StaticFileHandler, {"path": "./static"}),
     (r"/", MainHandler)
 ],**settings)

@@ -21,7 +21,7 @@ def create_namespace(name):
     except ApiException as e:
         print("Exception when calling CoreV1Api->create_namespace: %s\n" % e)
 
-def create_limitrange(namespace, maxmem="500Mi", maxcpu="3"):
+def create_limitrange(namespace, maxmem="500Mi", maxcpu="999m"):
     try:
         config.load_kube_config()
     except:
@@ -37,7 +37,7 @@ def create_limitrange(namespace, maxmem="500Mi", maxcpu="3"):
                     limits=[
                             client.V1LimitRangeItem(
                                 max={"memory":maxmem, "cpu": maxcpu},
-                                min={"memory":"50Mi", "cpu" : "1"},
+                                min={"memory":"100Mi", "cpu" : "100m"},
                                 type="Container"
                             )
                     ]
@@ -56,7 +56,7 @@ def create_deployment(namespace, name, cpulim, memlim):
     except:
         config.load_incluster_config()
 
-    api = client.AppsV1Api()
+    api = client.ExtensionsV1beta1Api()
 
     container = client.V1Container(
         name=name,
@@ -64,7 +64,9 @@ def create_deployment(namespace, name, cpulim, memlim):
         resources=client.V1ResourceRequirements(
                   requests={'memory': memlim, 'cpu': cpulim}))
 
-    body = client.V1Deployment(
+    body = client.ExtensionsV1beta1Deployment(
+            api_version="extensions/v1beta1",
+            kind="Deployment",
             metadata=client.V1ObjectMeta(name=name, namespace=namespace),
             spec = client.V1DeploymentSpec(
                 selector=client.V1LabelSelector(match_labels={"app":name}),
@@ -79,7 +81,7 @@ def create_deployment(namespace, name, cpulim, memlim):
     try:
         api_response = api.create_namespaced_deployment(namespace, body, pretty=pretty)
     except ApiException as e:
-        print("Exception when calling AppsV1Api->create_namespaced_deployment: %s\n" % e)
+        pprint("Exception when calling AppsV1Api->create_namespaced_deployment: %s\n" % e)
 
 
 
@@ -98,7 +100,7 @@ def delete_namespace(name):
     propagation_policy = "Background"
     try:
         api_response = api.delete_namespace(name, body, pretty=pretty, grace_period_seconds=grace_period_seconds, propagation_policy=propagation_policy)
-        #pprint(api_response)
+        pprint(api_response)
     except ApiException as e:
         print("Exception when calling CoreV1Api->delete_namespace: %s\n" % e)
 
