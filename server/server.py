@@ -164,7 +164,7 @@ class Case1RegistrationHandler(tornado.web.RequestHandler):
             CreateUser1(db1, username, namespace, cpulimit, memlimit)
             self.redirect('/case1')
         except Exception as e:
-            self.render('AddUser.html',failmessage="User Was not created. {}. Try Again.".format(e))
+            self.render('NotFound.html', errormessage="{}".format(e))
 
 class Case2(tornado.web.RequestHandler):
     @gen.coroutine
