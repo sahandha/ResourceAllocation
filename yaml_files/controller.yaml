@@ -1,7 +1,7 @@
 kind: ReplicationController
 apiVersion: v1
 metadata:
-  name: controller
+  name: resourceallocation
   namespace: resourceallocation
 spec:
   replicas: 1
@@ -34,6 +34,9 @@ spec:
           ports:
             - containerPort: 27017
             - containerPort: 8888 
+          volumeMounts:
+            - mountPath: /external/shared
+              name: mongodb-volume
           resources:
             requests:
               cpu: 100m
