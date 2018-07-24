@@ -66,10 +66,21 @@ def submitjob2(db,user,jobid,cpureq, memreq):
     doc = yield db.users.find({'username':user}).to_list(length=1)
     cpulim=doc[0]["cpulimit"]
     memlim=doc[0]["memlimit"]
-    namespace = jobid+"-ns"
+    namespace = user+jobid+"-ns"
     kd.create_namespace(namespace)
     kd.create_limitrange(namespace, maxmem=memlim+'Mi', maxcpu=cpulim+'m')
     kd.create_deployment(namespace, jobid, cpureq+"m", memreq+"Mi")
+
+    jobs=doc[0]["jobs"]
+    jobs.append({"jobid":jobid,"cpureq":cpulim,"memreq":memlim})
+
+    db.users.update_one(
+    {'username':user},
+    {
+        "$set":{
+        "jobs":jobs
+        }
+    })
 
 @gen.coroutine
 def DeleteUsers1(db, usernames):
@@ -97,8 +108,30 @@ def DeleteJob1(db, user, job):
 @gen.coroutine
 def DeleteUsers2(db, usernames):
     for user in usernames:
-        doc = yield db.users.find({"username":user},{"_id": 0 ,"username": 1}).to_list(length=1)
-        db.users.delete_one({"username":doc[0]["username"]})
+        doc = yield db.users.find({"username":user},{"_id": 0 ,"username": 1, "jobs":1}).to_list(length=1)
+        username = doc[0]["username"]
+        jobs = doc[0]["jobs"]
+        db.users.delete_one({"username":username})
+        for job in jobs:
+            jobns = username+job["jobid"]+'-ns'
+            kd.delete_namespace(jobns)
+
+
+@gen.coroutine
+def DeleteJob2(db,user,job): # TODO: need to complete this
+    doc = yield db.users.find({"username":user},{"_id": 0 , "jobs": 1 }).to_list(length=1)
+    kd.delete_namespace(job+'-ns')
+
+    jobs=doc[0]["jobs"]
+    jobs = [x for x in jobs if x['jobid'] != job]
+
+    db.users.update_one(
+    {'username':user},
+    {
+        "$set":{
+        "jobs":jobs
+        }
+    })
 
 @gen.coroutine
 def getUserData(db):
@@ -188,11 +221,9 @@ class Case1DeleteSelectedUsers(tornado.web.RequestHandler):
 class Case1DeleteJob(tornado.web.RequestHandler):
     @gen.coroutine
     def post(self):
-        print("I HAVE made it here. Not all hope is lost.")
         try:
             user  = self.get_argument("username")
             jobid = self.get_argument("jobname")
-            print("username", user, "jobid", jobid,"===============")
             DeleteJob1(db1, user, jobid)
             self.redirect('/case1')
         except Exception as e:
@@ -216,6 +247,9 @@ class Case2(tornado.web.RequestHandler):
     def get(self):
         try:
             userdata = yield getUserData(db2)
+            for user in userdata:
+                jobs = yield getJobData(db2,user[0])
+                user.append(jobs)
             self.render('Case2LandingPage.html',
                     userdata=userdata)
         except Exception as e:
@@ -270,6 +304,18 @@ class Case2DeleteSelectedUsers(tornado.web.RequestHandler):
             except Exception as e:
                 self.render('NotFound.html', errormessage="{}".format(e))
 
+class Case2DeleteJob(tornado.web.RequestHandler):
+    @gen.coroutine
+    def post(self):
+        try:
+            user  = self.get_argument("username")
+            jobid = self.get_argument("jobname")
+            DeleteJob2(db2, user, jobid)
+            self.redirect('/case2')
+        except Exception as e:
+            self.render('NotFound.html', errormessage="{}".format(e))
+
+
 class Case2RegistrationHandler(tornado.web.RequestHandler):
     def post(self):
         try:
@@ -280,45 +326,6 @@ class Case2RegistrationHandler(tornado.web.RequestHandler):
             self.redirect('/case2')
         except Exception as e:
             self.render('NotFound.html', errormessage="{}".format(e))
-
-#================================================>
-
-class ForgotPasswordHandler(tornado.web.RequestHandler):
-    def get(self):
-        self.render('forgot_password.html')
-
-class ProjectLoader(tornado.web.RequestHandler):
-    def initialize(self, **configs):
-        self.db = self.application.settings['db']
-        self.current_user = self.application.settings['current_user']
-        self.application.settings['current_project'] = (self.request.uri).lstrip('/projectload')
-        self.current_project = self.application.settings['current_project']
-        self.projects = self.application.settings['projects']
-        staticimages, imagespath, treespath, uploadspath = getPaths(self.current_user, self.current_project)
-        self.imagespath = imagespath
-        self.staticimages = staticimages
-
-    def get(self):
-        self.render('TrainedData.html',
-                    username=self.current_user,
-                    projects=self.projects,
-                    current_project=self.current_project,
-                    imagespath=self.static_url(self.staticimages))
-
-class DeleteProject(tornado.web.RequestHandler):
-    def initialize(self, **configs):
-        self.db = self.application.settings['db']
-        current_project = self.application.settings['current_project']
-        self.current_user = self.application.settings['current_user']
-        projects = self.application.settings['projects']
-        projects.remove(current_project)
-        self.application.settings['current_project'] = "default"
-        self.application.settings['projects'] = projects
-        Updatedb(self.current_user,"projects",projects)
-        DeleteProjectFolder(self.current_user,current_project)
-
-    def get(self):
-        self.redirect('/')
 
 settings=dict(
     template_path=__TEMPLATE__,
@@ -347,6 +354,7 @@ application = tornado.web.Application([
     (r"/case2/deleteselectedusers", Case2DeleteSelectedUsers),
     (r"/case2/registeruser", Case2RegistrationHandler),
     (r"/case2/jobsubmit", Case2JobSubmit),
+    (r"/case2/jobkill", Case2DeleteJob),
     (r"/projectload(.*)",tornado.web.StaticFileHandler, {"path": "./static"}),
     (r"/", MainHandler)
 ],**settings)
