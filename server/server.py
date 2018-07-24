@@ -18,8 +18,8 @@ __RESOURCE__ = os.path.join(os.path.dirname(__file__),"resources/")
 __USERS__ = os.path.join(os.path.dirname(__file__),"static/users/")
 
 
-db1 = motor.motor_tornado.MotorClient().ReourceAllocationCase1
-db2 = motor.motor_tornado.MotorClient().ReourceAllocationCase2
+db1 = motor.motor_tornado.MotorClient().ResourceAllocationCase1
+db2 = motor.motor_tornado.MotorClient().ResourceAllocationCase2
 
 def CreateUser1(db, username, namespace, cpulimit, memlimit):
     # insert user info into database
@@ -27,7 +27,8 @@ def CreateUser1(db, username, namespace, cpulimit, memlimit):
     'username':username,
     'namespace':namespace,
     'cpulimit':cpulimit,
-    'memlimit':memlimit
+    'memlimit':memlimit,
+    'jobs':[]
     })
 
     # Create namespace
@@ -39,7 +40,8 @@ def CreateUser2(db, username, cpulimit, memlimit):
     db.users.insert_one({
     'username':username,
     'cpulimit':cpulimit,
-    'memlimit':memlimit
+    'memlimit':memlimit,
+    'jobs':[]
     })
 
 
@@ -47,10 +49,16 @@ def CreateUser2(db, username, cpulimit, memlimit):
 def submitjob1(db,user,jobid,cpulim, memlim):
     doc = yield db.users.find({'username':user}).to_list(length=1)
     namespace=doc[0]["namespace"]
-    print("namespace ======>>>>", namespace)
-    print("jobid ==========>>>>", jobid)
-    print("cpulim =========>>>>", cpulim)
-    print("memlim =========>>>>", memlim)
+    jobs=doc[0]["jobs"]
+    jobs.append({"jobid":jobid,"cpureq":cpulim,"memreq":memlim})
+
+    db.users.update_one(
+    {'username':user},
+    {
+        "$set":{
+        "jobs":jobs
+        }
+    })
     kd.create_deployment(namespace, jobid, cpulim+"m", memlim+"Mi")
 
 @gen.coroutine
@@ -58,11 +66,6 @@ def submitjob2(db,user,jobid,cpureq, memreq):
     doc = yield db.users.find({'username':user}).to_list(length=1)
     cpulim=doc[0]["cpulimit"]
     memlim=doc[0]["memlimit"]
-    print("jobid ==========>>>>", jobid)
-    print("cpulim =========>>>>", cpulim)
-    print("memlim =========>>>>", memlim)
-    print("cpureq =========>>>>", cpureq)
-    print("memreq =========>>>>", memreq)
     namespace = jobid+"-ns"
     kd.create_namespace(namespace)
     kd.create_limitrange(namespace, maxmem=memlim+'Mi', maxcpu=cpulim+'m')
@@ -76,6 +79,25 @@ def DeleteUsers1(db, usernames):
         kd.delete_namespace(doc[0]["namespace"])
 
 @gen.coroutine
+def DeleteJob1(db, user, job):
+    print("job name is", job)
+    doc = yield db.users.find({"username":user},{"_id": 0 ,"username": 1, "namespace": 1, "jobs": 1 }).to_list(length=1)
+    namespace = doc[0]["namespace"]
+    jobs=doc[0]["jobs"]
+    print("jobs before", jobs)
+    jobs = [x for x in jobs if x['jobid'] != job]
+    print("jobs after", jobs)
+    db.users.update_one(
+    {'username':user},
+    {
+        "$set":{
+        "jobs":jobs
+        }
+    })
+    kd.delete_deployment(namespace, job)
+
+
+@gen.coroutine
 def DeleteUsers2(db, usernames):
     for user in usernames:
         doc = yield db.users.find({"username":user},{"_id": 0 ,"username": 1}).to_list(length=1)
@@ -85,10 +107,19 @@ def DeleteUsers2(db, usernames):
 def getUserData(db):
     try:
         doc = yield db.users.find({},{"_id": 0 ,"username": 1, "cpulimit": 1, "memlimit": 1 }).to_list(length=100)
-        userdata = [(l["username"],l["cpulimit"],l["memlimit"]) for l in doc]
+        userdata = [[l["username"],l["cpulimit"],l["memlimit"]] for l in doc]
     except:
         userdata = []
     return userdata
+
+@gen.coroutine
+def getJobData(db, user):
+    try:
+        doc = yield db.users.find({"username":user},{"_id": 0 ,"jobs": 1}).to_list(length=1)
+        jobdata = [(l["jobid"], l["cpureq"], l["memreq"]) for l in doc[0]['jobs']]
+    except:
+        jobdata = []
+    return jobdata
 
 
 class MainHandler(tornado.web.RequestHandler):
@@ -98,8 +129,11 @@ class MainHandler(tornado.web.RequestHandler):
 class Case1(tornado.web.RequestHandler):
     @gen.coroutine
     def get(self):
-        userdata = yield getUserData(db1)
         try:
+            userdata = yield getUserData(db1)
+            for user in userdata:
+                jobs = yield getJobData(db1,user[0])
+                user.append(jobs)
             self.render('Case1LandingPage.html',
                         userdata=userdata)
         except Exception as e:
@@ -108,6 +142,7 @@ class Case1(tornado.web.RequestHandler):
 class Case1JobSubmit(tornado.web.RequestHandler):
     @gen.coroutine
     def post(self):
+        print("am i here?????????????????????")
         try:
             user  = self.get_argument("user")
             jobid = self.get_argument(user+"job")
@@ -152,6 +187,18 @@ class Case1DeleteSelectedUsers(tornado.web.RequestHandler):
                 self.redirect('/case1')
             except Exception as e:
                 self.render('NotFound.html', errormessage="{}".format(e))
+
+class Case1DeleteJob(tornado.web.RequestHandler):
+    @gen.coroutine
+    def post(self):
+        try:
+            user  = self.get_argument("username")
+            jobid = self.get_argument("jobname")
+            print("username", user, "jobid", jobid,"===============")
+            DeleteJob1(db1, user, jobid)
+            self.redirect('/case1')
+        except Exception as e:
+            self.render('NotFound.html', errormessage="{}".format(e))
 
 class Case1RegistrationHandler(tornado.web.RequestHandler):
 
@@ -234,7 +281,7 @@ class Case2RegistrationHandler(tornado.web.RequestHandler):
             CreateUser2(db2, username, cpulimit, memlimit)
             self.redirect('/case2')
         except Exception as e:
-            self.render('AddUser.html',failmessage="User Was not created. {}. Try Again.".format(e))
+            self.render('NotFound.html', errormessage="{}".format(e))
 
 #================================================>
 
@@ -275,108 +322,6 @@ class DeleteProject(tornado.web.RequestHandler):
     def get(self):
         self.redirect('/')
 
-class NewProject(tornado.web.RequestHandler):
-
-    def get(self):
-        self.application.settings['current_project'] = "default"
-        self.redirect('/')
-
-
-class ScorePoint(tornado.web.RequestHandler):
-    def initialize(self, **configs):
-        self.db = self.application.settings['db']
-        self.current_user = self.application.settings['current_user']
-        self.current_project = self.application.settings['current_project']
-        self.projects = self.application.settings['projects']
-    def post(self):
-        staticimages, imagespath, treespath, uploadspath = getPaths(self.current_user, self.current_project)
-        self.staticimages = staticimages
-        self.imagespath = imagespath
-        datapoint = self.get_argument('datapoint')
-        subprocess.call([__SCRIPTS__+'submitsparkjob_scoring.sh',
-                         __RESOURCE__+'iso_forest-master.zip',
-                         __ROOT__+'/score.py',
-                         datapoint,
-                         uploadspath,
-                         treespath,
-                         self.imagespath])
-        self.get()
-    def get(self):
-        self.render("results.html",
-                    username=self.current_user,
-                    projects=self.projects,
-                    current_project=self.current_project,
-                    imagespath=self.static_url(self.staticimages))
-
-class ScoreData(tornado.web.RequestHandler):
-    def post(self):
-        fileinfo = self.request.files['filearg'][0]
-        fname = fileinfo['filename']
-        extn = os.path.splitext(fname)[1]
-        #cname = str(uuid.uuid4()) + extn #this is to scramble the name of the file
-        fh = open(uploadspath+"/"+fname, 'wb')
-        fh.write(fileinfo['body'])
-        fh.close()
-        self.redirect('/')
-
-class Upload(tornado.web.RequestHandler):
-    def initialize(self, **configs):
-        self.db = self.application.settings['db']
-        self.current_user = self.application.settings['current_user']
-        self.current_project = self.application.settings['current_project']
-        self.projects = self.application.settings['projects']
-
-
-    def post(self):
-        project = self.get_argument('projectname')
-        if project in self.projects:
-            self.render('user_landing_page.html',
-                        username=self.current_user,
-                        projects=self.projects,
-                        current_project=self.current_project,
-                        failmessage="Project already exists")
-            return
-        self.CreateProject(self.current_user,project)
-        self.current_project = project
-        staticimages, imagespath, treespath, uploadspath = getPaths(self.current_user, self.current_project)
-        self.imagespath = imagespath
-        self.staticimages = staticimages
-        fileinfo = self.request.files['filearg'][0]
-        fname = fileinfo['filename']
-        cname = 'data.csv'
-        fh = open(uploadspath+"/"+cname, 'wb')
-        fh.write(fileinfo['body'])
-        fh.close()
-        subprocess.call([__SCRIPTS__+'submitsparkjob.sh',
-                         __RESOURCE__+'iso_forest-master.zip',
-                         __ROOT__+'/train.py',
-                         uploadspath+"/"+cname,
-                         treespath,
-                         self.imagespath])
-        self.get()
-    def get(self):
-        self.redirect("/projectload"+self.current_project)
-
-    def CreateProject(self,username,project):
-        projectdir = __USERS__+"/"+username+"/"+project
-        useruploads=projectdir+"/uploads"
-        if not os.path.exists(useruploads):
-            os.makedirs(useruploads)
-
-        userimages=projectdir+"/images"
-        if not os.path.exists(userimages):
-            os.makedirs(userimages)
-
-        usertrees=projectdir+"/trees"
-        if not os.path.exists(usertrees):
-            os.makedirs(usertrees)
-
-        self.application.settings["current_project"] = project
-        self.projects.append(project)
-        self.application.settings['projects'] = self.projects
-        Updatedb(self.current_user,'projects', self.projects)
-        #putPaths(self.current_user, project)
-
 settings=dict(
     template_path=__TEMPLATE__,
     static_path=__STATIC__,
@@ -397,6 +342,7 @@ application = tornado.web.Application([
     (r"/case1/deleteselectedusers", Case1DeleteSelectedUsers),
     (r"/case1/registeruser", Case1RegistrationHandler),
     (r"/case1/jobsubmit", Case1JobSubmit),
+    (r"/case1/jobkill", Case1DeleteJob),
     (r"/case2", Case2),
     (r"/case2/adduser", Case2AddUser),
     (r"/case2/deleteuser", Case2DeleteUser),

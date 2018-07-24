@@ -14,7 +14,7 @@ def create_namespace(name):
     api = client.CoreV1Api()
 
     body = client.V1Namespace(metadata=client.V1ObjectMeta(name=name))
-    pretty = 'pretty_example'
+    pretty = 'true'
     try:
         api_response = api.create_namespace(body, pretty=pretty)
         #pprint(api_response)
@@ -43,7 +43,7 @@ def create_limitrange(namespace, maxmem="500Mi", maxcpu="999m"):
                     ]
                 )
             )
-    pretty = 'pretty_example'
+    pretty = 'true'
 
     try:
         api_response = api.create_namespaced_limit_range(namespace, body, pretty=pretty)
@@ -76,7 +76,7 @@ def create_deployment(namespace, name, cpulim, memlim):
                        )
             )
         )
-    pretty = 'pretty_example'
+    pretty = 'true'
 
     try:
         api_response = api.create_namespaced_deployment(namespace, body, pretty=pretty)
@@ -95,7 +95,7 @@ def delete_namespace(name):
     api = client.CoreV1Api()
 
     body = client.V1DeleteOptions()
-    pretty = 'pretty_example'
+    pretty = 'true'
     grace_period_seconds = 56
     propagation_policy = "Background"
     try:
@@ -103,6 +103,26 @@ def delete_namespace(name):
         pprint(api_response)
     except ApiException as e:
         print("Exception when calling CoreV1Api->delete_namespace: %s\n" % e)
+
+
+def delete_deployment(namespace,name):
+    try:
+        config.load_kube_config()
+    except:
+        config.load_incluster_config()
+
+    api = client.ExtensionsV1beta1Api()
+
+    body = client.V1DeleteOptions()
+    pretty = 'true'
+    grace_period_seconds = 56
+    propagation_policy = 'Foreground'
+
+    try:
+        api_response = api.delete_namespaced_deployment(name, namespace, body, pretty=pretty, grace_period_seconds=grace_period_seconds, propagation_policy=propagation_policy)
+        #pprint(api_response)
+    except ApiException as e:
+        print("Exception when calling ExtensionsV1beta1Api->delete_namespaced_deployment: %s\n" % e)
 
 def main(action='', user='test', token='qwerty', passwd=None):
     print("Call functions directly")
