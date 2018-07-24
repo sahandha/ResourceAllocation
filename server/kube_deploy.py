@@ -113,13 +113,14 @@ def delete_deployment(namespace,name):
 
     api = client.ExtensionsV1beta1Api()
 
-    body = client.V1DeleteOptions()
+
+    body = client.V1DeleteOptions(propagation_policy="Foreground",grace_period_seconds=10)
     pretty = 'true'
     grace_period_seconds = 56
-    propagation_policy = 'Foreground'
+
 
     try:
-        api_response = api.delete_namespaced_deployment(name, namespace, body, pretty=pretty, grace_period_seconds=grace_period_seconds, propagation_policy=propagation_policy)
+        api_response = api.delete_namespaced_deployment(name, namespace, body, pretty=pretty)
         #pprint(api_response)
     except ApiException as e:
         print("Exception when calling ExtensionsV1beta1Api->delete_namespaced_deployment: %s\n" % e)

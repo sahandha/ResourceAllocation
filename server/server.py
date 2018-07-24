@@ -80,13 +80,10 @@ def DeleteUsers1(db, usernames):
 
 @gen.coroutine
 def DeleteJob1(db, user, job):
-    print("job name is", job)
     doc = yield db.users.find({"username":user},{"_id": 0 ,"username": 1, "namespace": 1, "jobs": 1 }).to_list(length=1)
     namespace = doc[0]["namespace"]
     jobs=doc[0]["jobs"]
-    print("jobs before", jobs)
     jobs = [x for x in jobs if x['jobid'] != job]
-    print("jobs after", jobs)
     db.users.update_one(
     {'username':user},
     {
@@ -142,7 +139,7 @@ class Case1(tornado.web.RequestHandler):
 class Case1JobSubmit(tornado.web.RequestHandler):
     @gen.coroutine
     def post(self):
-        print("am i here?????????????????????")
+
         try:
             user  = self.get_argument("user")
             jobid = self.get_argument(user+"job")
@@ -191,6 +188,7 @@ class Case1DeleteSelectedUsers(tornado.web.RequestHandler):
 class Case1DeleteJob(tornado.web.RequestHandler):
     @gen.coroutine
     def post(self):
+        print("I HAVE made it here. Not all hope is lost.")
         try:
             user  = self.get_argument("username")
             jobid = self.get_argument("jobname")
