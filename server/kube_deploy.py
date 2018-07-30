@@ -96,7 +96,7 @@ def delete_namespace(name):
 
     body = client.V1DeleteOptions()
     pretty = 'true'
-    grace_period_seconds = 56
+    grace_period_seconds = 5
     propagation_policy = "Background"
     try:
         api_response = api.delete_namespace(name, body, pretty=pretty, grace_period_seconds=grace_period_seconds, propagation_policy=propagation_policy)
@@ -114,9 +114,8 @@ def delete_deployment(namespace,name):
     api = client.ExtensionsV1beta1Api()
 
 
-    body = client.V1DeleteOptions(propagation_policy="Foreground",grace_period_seconds=10)
+    body = client.V1DeleteOptions(propagation_policy="Foreground",grace_period_seconds=5)
     pretty = 'true'
-    grace_period_seconds = 56
 
 
     try:

@@ -44,7 +44,6 @@ def CreateUser2(db, username, cpulimit, memlimit):
     'jobs':[]
     })
 
-
 @gen.coroutine
 def submitjob1(db,user,jobid,cpulim, memlim):
     doc = yield db.users.find({'username':user}).to_list(length=1)
@@ -104,7 +103,6 @@ def DeleteJob1(db, user, job):
     })
     kd.delete_deployment(namespace, job)
 
-
 @gen.coroutine
 def DeleteUsers2(db, usernames):
     for user in usernames:
@@ -115,7 +113,6 @@ def DeleteUsers2(db, usernames):
         for job in jobs:
             jobns = username+job["jobid"]+'-ns'
             kd.delete_namespace(jobns)
-
 
 @gen.coroutine
 def DeleteJob2(db,user,job): # TODO: need to complete this
