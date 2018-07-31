@@ -16,6 +16,7 @@ function makeKnob(elem) {
   var val = elem.getAttribute("value")
   var stepSize = elem.getAttribute("step")
   var size = elem.getAttribute("size")
+  var readonly = elem.getAttribute("readonly")
 
   var knob = pureknob.createKnob(size, size);
 
@@ -25,12 +26,15 @@ function makeKnob(elem) {
   knob.setProperty('colorFG', '#18458e');
   knob.setProperty('colorBG', '#b6bdc6');
   knob.setProperty('trackWidth', 0.4);
-  knob.setProperty('valMin', min);
-  knob.setProperty('valMax', max);
-  knob.setProperty('stepSize', stepSize);
+  knob.setProperty('valMin', Number(min));
+  knob.setProperty('valMax', Number(max));
+  knob.setProperty('val', Number(val));
+  knob.setProperty('stepSize', Number(stepSize));
+  knob.setProperty('readonly', readonly);
 
   // Set initial value.
   knob.setValue(val);
+
   elem.getElementsByTagName("input")[0].value=val
   /*
   * Event listener.
@@ -48,5 +52,6 @@ function makeKnob(elem) {
   };
 
   knob.addListener(listener);
+
   return knob
 }

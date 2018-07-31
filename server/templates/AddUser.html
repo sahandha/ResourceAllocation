@@ -12,39 +12,40 @@
     <input type="text" class="form-control" id="username" name="username" placeholder="username">
   </div>
   <div class="form-group">
-    <label for="namespace">Choose a namespace</label>
-    <input type="namespace" class="form-control" id="namespace" name="namespace" placeholder="namespace">
-  </div>
-  <div class="form-group">
     <label>Select limits</label>
     <div class="row">
-      <div class="col-sm-1">
-      </div>
-      <div class="col-md-5">
+      <div class="col-md-4">
         <div class="text-center">cpu (MilliCPU):
-          <div class="knob" min=100 max=999 value=200 step=10 size=100>
+          <div class="knob" min=100 max=999 value=200 step=10 size=200>
             <div style="display: none;">
               <input name="cpulimit"></input>
             </div>
           </div>
         </div>
       </div>
-        <div class="col-md-5">
-          <div class="text-center">memory (Mi):
-            <div class="knob" min=100 max=500 value=350 step=5 size=100>
-              <div style="display: none;">
-                <input name="memlimit"></input>
-              </div>
+      <div class="col-md-4">
+        <div class="text-center">memory (Mi):
+          <div class="knob" min=100 max=500 value=350 step=5 size=200>
+            <div style="display: none;">
+              <input name="memlimit"></input>
             </div>
           </div>
         </div>
-        <div class="col-sm-1">
+      </div>
+      <div class="col-md-4">
+        <div class="text-center">Pods:
+          <div class="knob" min=100 max=500 value=350 step=5 size=200>
+            <div style="display: none;">
+              <input name="podlimit"></input>
+            </div>
+          </div>
         </div>
+      </div>
       </div>
     </div>
   </div>
   <button type="submit" class="login-button">submit<submit</button>
-</form>
+  </form>
 </div>
 
 

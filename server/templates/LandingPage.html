@@ -11,13 +11,14 @@
       <th scope="col">Job Name</th>
       <th scope="col" class="text-center">CPU (milli cpu)</th>
       <th scope="col" class="text-center">Memory (Mi)</th>
+      <th scope="col" class="text-center"></th>
+      <th scope="col" class="text-center"></th>
     </tr>
   </thead>
   <tbody>
     {% for (user,cpulim,memlim,jobs) in userdata %}
-
       <tr>
-        <form action="/case2/jobsubmit" method="POST" name="myform">
+        <form action="jobsubmit" method="POST" name="myform">
         <td class="align-middle">{{escape(user)}}
           <div style="display: none;">
             <input name="user" value={{escape(user)}}></input>
@@ -35,7 +36,7 @@
         </td>
         <td class="align-middle">
             <input name="{{escape(user)}}job"></select>
-          </td>
+        </td>
         <td class="text-center align-middle">
           <div class="knob" min=100 max={{escape(cpulim)}} value=150 step=10 size=50>
             <div style="display: none;">
@@ -99,7 +100,7 @@
                             </div>
                           </td>
                           <td class="text-center align-middle">
-                            <form action="/case2/jobkill" method="POST" name="{{escape(jobid)}}jobform">
+                            <form action="/jobkill" method="POST" name="{{escape(jobid)}}jobform">
                               <div style="display: none;">
                                 <input name="username" value={{escape(user)}}></input>
                               </div>
@@ -109,7 +110,6 @@
                               <input id="{{escape(user)}}{{escape(jobid)}}kill" type="submit" value="kill Job" class="btn btn-primary"></input>
                             </form>
                           </td>
-
                       </tr>
                     {% end %}
                   </tbody>
@@ -129,21 +129,5 @@
   </tbody>
 </table>
 </div>
-
-<div class="container">
-    <div class="row">
-        <div class="col-xs-1">
-            <form action="/case2/adduser" method="GET">
-              <input id="adduser" type="submit" value="Add User" class="btn btn-default"></input>
-            </form>
-        </div>
-        <div class="col-xs-1">
-            <form action="/case2/deleteuser" method="GET">
-              <input id="deluser" type="submit" value="Delete Users" class="btn btn-default"></input>
-            </form>
-        </div>
-    </div>
-</div>
-
 
 {% end block %}

@@ -298,10 +298,11 @@ function PureKnob() {
 				/*
 				 * Clamp the actual value into the [valMin; valMax] range.
 				 */
-				if (value < valMin)
-					value = valMin;
-				else if (value > valMax)
-					value = valMax;
+
+				if (value < valMin){
+					value = valMin;}
+				else if (value > valMax){
+					value = valMax;}
 
 				value = Math.round(value);
 				this.setProperty('val', value);

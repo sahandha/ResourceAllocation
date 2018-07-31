@@ -1,14 +1,91 @@
 {% extends template.html%}
 
 {% block content %}
-  <h2><font color="gray">Select one of the two cases to simulate</font></h2>
   <div class=jumbotron>
-      <div class="well text-center">
-        <a href="/case1" method="GET"><font color="black">Case 1</font></a>
+    <h3><font color="black">Overall System Usage</font></h3>
+    <div class=well>
+    <div class="row text-center">
+      {% if len(systemdata)==0%}
+        <a href="/connecttocluster" method="GET"><font color=gray> Connect to Cluster</font></a>
+      {% else %}
+      <div class="col-md-4 text-center" name="cpuusage">
+        <div class="knob" min=0 max={{escape(systemdata[0])}} value={{escape(systemdata[1])}} size=200 readonly=true>
+          <div style="display: none;">
+            <input name="input"></input>
+          </div>
+        </div>
+        <p>CPU Usage</p>
+        <p>({{escape(systemdata[0])}}m)</p>
       </div>
-      <div class="well text-center">
-        <a href="/case2" method="GET"><font color="black">Case 2</font></a>
+      <div class="col-md-4 text-center" name="memoryusage">
+        <div class="knob" min=0 max={{escape(systemdata[2])}} value={{escape(systemdata[3])}} size=200 readonly=true>
+          <div style="display: none;">
+            <input name="input"></input>
+          </div>
+        </div>
+        <p>Memory Usage</p>
+        <p>({{escape(systemdata[2])}}Mi)</p>
       </div>
+      <div class="col-md-4 text-center" name="podusage">
+        <div class="knob" min=0 max={{escape(systemdata[4])}} value={{escape(systemdata[5])}} size=200 readonly=true>
+          <div style="display: none;">
+            <input name="input"></input>
+          </div>
+        </div>
+        <p>Pod Usage</p>
+        <p>({{escape(systemdata[4])}})</p>
+      </div>
+      {% end %}
+    </div>
+
+  </div>
+    <h3><font color="black">Current Users</font></h3>
+    <div class="well text-center" name="users">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col" class="text-center">Users</th>
+            <th scope="col" class="text-center">CPU (milli cpu)</th>
+            <th scope="col" class="text-center">Memory (Mi)</th>
+            <th scope="col" class="text-center">Pods</th>
+            <th scope="col" class="text-center">Time Remaining</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for (user,cpulim,memlim,podlim,jobs) in userdata %}
+            <tr>
+              <td class="align-middle">{{escape(user)}}
+                <div style="display: none;">
+                  <input name="user" value={{escape(user)}}></input>
+                </div>
+              </td>
+              <td class="align-middle">
+                {{escape(cpulim)}}
+              </td>
+              <td class="text-center align-middle">
+                {{escape(memlim)}}
+              </td>
+              <td class="text-center align-middle">
+                {{escape(podlim)}}
+              </td>
+              <td class="text-center align-middle">
+                <div class="timer" name="{{escape(user)}}" start-time="Jul 30, 2018 13:37:25" duration="90">
+                </div>
+              </td>
+            </tr>
+          {% end %}
+        </tbody>
+      </table>
+    </div>
+    <div class="well text-center" name="adduser">
+        <a href="/adduser" method="GET"><font color=gray>Add Users</font></a>
+    </div>
+    <div class="well text-center" name="managejob">
+      <a href="/jobmanage" method="GET"><font color=gray>Manage Jobs</font></a>
+    </div>
+    <div class="well text-center" name="deleteuser">
+      <a href="/deleteuser" method="GET"><font color=gray>Delete Users</font></a>
+    </div>
   </div>
   <img  width="100%" src="{{static_url('images/allocation.jpg')}}" >
 {% end block %}
