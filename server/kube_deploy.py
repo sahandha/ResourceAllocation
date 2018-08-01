@@ -70,7 +70,7 @@ def create_limitrange(namespace, maxmem="500Mi", maxcpu="999m"):
     except ApiException as e:
         print("Exception when calling CoreV1Api->create_namespaced_limit_range: %s\n" % e)
 
-def create_quota(namespace, maxmem="500Mi", maxcpu="999m"):
+def create_quota(namespace, maxmem="500Mi", maxcpu="999m", maxpods="100"):
     try:
         config.load_kube_config()
     except:
@@ -78,28 +78,22 @@ def create_quota(namespace, maxmem="500Mi", maxcpu="999m"):
 
     api = client.CoreV1Api()
 
-    body = client.V1LimitRange(
+    body = client.V1ResourceQuota(
                 api_version='v1',
-                kind="LimitRange",
+                kind="ResourceQuota",
                 metadata=client.V1ObjectMeta(name=namespace, namespace=namespace),
-                spec=client.V1LimitRangeSpec(
-                    limits=[
-                            client.V1LimitRangeItem(
-                                max={"memory":maxmem, "cpu": maxcpu},
-                                min={"memory":"100Mi", "cpu" : "100m"},
-                                type="Container"
-                            )
-                    ]
+                spec=client.V1ResourceQuotaSpec(
+                    hard={"cpu":maxcpu, "memory":maxmem, "pods":maxpods}
                 )
             )
     pretty = 'true'
 
     try:
-        api_response = api.create_namespaced_limit_range(namespace, body, pretty=pretty)
+        api_response = api.create_namespaced_resource_quota(namespace, body, pretty=pretty)
     except ApiException as e:
         print("Exception when calling CoreV1Api->create_namespaced_limit_range: %s\n" % e)
 
-def create_deployment(namespace, name, cpulim, memlim):
+def create_deployment(namespace, name, cpulim, memlim, podlim):
     try:
         config.load_kube_config()
     except:

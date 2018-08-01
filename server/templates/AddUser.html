@@ -9,14 +9,14 @@
   <form id=registeruser action={{uri}} method="POST">
   <div class="form-group">
     <label for="username">Choose a username</label>
-    <input type="text" class="form-control" id="username" name="username" placeholder="username">
+    <input type="text" class="form-control" id="username" name="username" placeholder="username" required>
   </div>
   <div class="form-group">
     <label>Select limits</label>
     <div class="row">
       <div class="col-md-4">
         <div class="text-center">cpu (MilliCPU):
-          <div class="knob" min=100 max=999 value=200 step=10 size=200>
+          <div class="knob" min=0 max={{escape(limitdata[0])}} value={{escape(limitdata[1])}} step=10 size=200>
             <div style="display: none;">
               <input name="cpulimit"></input>
             </div>
@@ -25,7 +25,7 @@
       </div>
       <div class="col-md-4">
         <div class="text-center">memory (Mi):
-          <div class="knob" min=100 max=500 value=350 step=5 size=200>
+          <div class="knob" min=0 max={{escape(limitdata[2])}} value={{escape(limitdata[3])}} step=20 size=200>
             <div style="display: none;">
               <input name="memlimit"></input>
             </div>
@@ -34,7 +34,7 @@
       </div>
       <div class="col-md-4">
         <div class="text-center">Pods:
-          <div class="knob" min=100 max=500 value=350 step=5 size=200>
+          <div class="knob" min=0 max={{escape(limitdata[4])}} value={{escape(limitdata[5])}} step=1 size=200>
             <div style="display: none;">
               <input name="podlimit"></input>
             </div>
@@ -44,7 +44,9 @@
       </div>
     </div>
   </div>
-  <button type="submit" class="login-button">submit<submit</button>
+  {% if failmessage == "" %}
+    <button type="submit" class="login-button">submit<submit</button>
+  {% end %}
   </form>
 </div>
 

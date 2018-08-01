@@ -48,11 +48,11 @@
             <th scope="col" class="text-center">CPU (milli cpu)</th>
             <th scope="col" class="text-center">Memory (Mi)</th>
             <th scope="col" class="text-center">Pods</th>
-            <th scope="col" class="text-center">Time Remaining</th>
+            <th scope="col" class="text-center">Time Created</th>
           </tr>
         </thead>
         <tbody>
-          {% for (user,cpulim,memlim,podlim,jobs) in userdata %}
+          {% for (user,cpulim,memlim,podlim,time) in userdata %}
             <tr>
               <td class="align-middle">{{escape(user)}}
                 <div style="display: none;">
@@ -69,8 +69,7 @@
                 {{escape(podlim)}}
               </td>
               <td class="text-center align-middle">
-                <div class="timer" name="{{escape(user)}}" start-time="Jul 30, 2018 13:37:25" duration="90">
-                </div>
+                {{escape(time)}}
               </td>
             </tr>
           {% end %}

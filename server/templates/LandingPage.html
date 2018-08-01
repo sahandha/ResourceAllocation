@@ -11,12 +11,13 @@
       <th scope="col">Job Name</th>
       <th scope="col" class="text-center">CPU (milli cpu)</th>
       <th scope="col" class="text-center">Memory (Mi)</th>
+      <th scope="col" class="text-center">Pods</th>
       <th scope="col" class="text-center"></th>
       <th scope="col" class="text-center"></th>
     </tr>
   </thead>
   <tbody>
-    {% for (user,cpulim,memlim,jobs) in userdata %}
+    {% for (user,cpulim,memlim,podlim,time,jobs,cpuavail,memavail,podavail) in userdata %}
       <tr>
         <form action="jobsubmit" method="POST" name="myform">
         <td class="align-middle">{{escape(user)}}
@@ -33,21 +34,33 @@
               memory limit: {{escape(memlim)}} Mi
               </font>
           </div>
+          <div>
+            <font size=1, color="gray">
+              pod limit: {{escape(podlim)}} Mi
+              </font>
+          </div>
         </td>
         <td class="align-middle">
-            <input name="{{escape(user)}}job"></select>
+            <input name="{{escape(user)}}job" placeholder="jobname" required></select>
         </td>
         <td class="text-center align-middle">
-          <div class="knob" min=100 max={{escape(cpulim)}} value=150 step=10 size=50>
+          <div class="knob" min=0 max={{escape(cpuavail)}} value=1 step=10 size=50>
             <div style="display: none;">
               <input name="{{escape(user)}}cpu"></input>
             </div>
           </div>
         </td>
         <td class="text-center align-middle">
-          <div class="knob" min=100 max={{escape(memlim)}} value=150 step=5 size=50>
+          <div class="knob" min=0 max={{escape(memavail)}} value=1 step=10 size=50>
             <div style="display: none;">
               <input name="{{escape(user)}}mem"></input>
+            </div>
+          </div>
+        </td>
+        <td class="text-center align-middle">
+          <div class="knob" min=0 max={{escape(podavail)}} value=1 step=1 size=50>
+            <div style="display: none;">
+              <input name="{{escape(user)}}pod"></input>
             </div>
           </div>
         </td>
@@ -77,11 +90,12 @@
                 <th scope="col" class="text-center">Job Name</th>
                 <th scope="col" class="text-center">CPU</th>
                 <th scope="col" class="text-center">Memory</th>
+                <th scope="col" class="text-center">Pods</th>
                 <th scope="col" class="text-center"></th>
               </tr>
             </thead>
                   <tbody>
-                    {% for (jobid,cpureq,memreq) in jobs %}
+                    {% for (jobid,cpureq,memreq,podreq) in jobs %}
                       <tr>
 
                           <td class="align-middle">
@@ -97,6 +111,11 @@
                           <td class="align-middle">
                             <div>
                               <p>{{escape(memreq)}}</p>
+                            </div>
+                          </td>
+                          <td class="align-middle">
+                            <div>
+                              <p>{{escape(podreq)}}</p>
                             </div>
                           </td>
                           <td class="text-center align-middle">

@@ -6,6 +6,7 @@ from shutil import rmtree
 import motor.motor_tornado
 from tornado import gen
 import kube_deploy as kd
+from datetime import datetime
 
 
 __ROOT__     = os.path.join(os.path.dirname(__file__))
@@ -42,11 +43,11 @@ def getSystemState(db):
 
         cpu_used= int(sum([float(l[1]) for l in userdata]))
         mem_used= int(sum([float(l[2]) for l in userdata]))
+        pod_used= int(sum([float(l[3]) for l in userdata]))
 
         systemdata = [str(cpu_available), str(cpu_used),
                       str(mem_available), str(mem_used),
-                      str(pod_available), str(0)]
-
+                      str(pod_available), str(pod_used)]
 
     except:
         systemdata = []
@@ -60,19 +61,20 @@ def CreateUser(db, username, namespace, cpulimit, memlimit, podlimit):
     'cpulimit':cpulimit,
     'memlimit':memlimit,
     'podlimit':podlimit,
-    'jobs':[]
+    'jobs':[],
+    'timecreated': str(datetime.now())
     })
 
     # Create namespace
     kd.create_namespace(namespace)
-    kd.create_limitrange(namespace, maxmem=memlimit+'Mi', maxcpu=cpulimit+'m')
+    kd.create_quota(namespace, maxmem=memlimit+'Mi', maxcpu=cpulimit+'m', maxpods=podlimit)
 
 @gen.coroutine
-def submitjob(db,user,jobid,cpulim, memlim):
+def submitjob(db,user,jobid,cpulim, memlim, podlim):
     doc = yield db.users.find({'username':user}).to_list(length=1)
     namespace=doc[0]["namespace"]
     jobs=doc[0]["jobs"]
-    jobs.append({"jobid":jobid,"cpureq":cpulim,"memreq":memlim})
+    jobs.append({"jobid":jobid,"cpureq":cpulim,"memreq":memlim,"podreq":podlim})
 
     db.users.update_one(
     {'username':user},
@@ -81,7 +83,7 @@ def submitjob(db,user,jobid,cpulim, memlim):
         "jobs":jobs
         }
     })
-    kd.create_deployment(namespace, jobid, cpulim+"m", memlim+"Mi")
+    kd.create_deployment(namespace, jobid, cpulim+"m", memlim+"Mi", podlim)
 
 @gen.coroutine
 def deleteUsers(db, usernames):
@@ -108,8 +110,8 @@ def deleteJob(db, user, job):
 @gen.coroutine
 def getUserData(db):
     try:
-        doc = yield db.users.find({},{"_id": 0 ,"username": 1, "cpulimit": 1, "memlimit": 1, "podlimit": 1}).to_list(length=100)
-        userdata = [[l["username"],l["cpulimit"],l["memlimit"],l["podlimit"]] for l in doc]
+        doc = yield db.users.find({},{"_id": 0 ,"username": 1, "cpulimit": 1, "memlimit": 1, "podlimit": 1, "timecreated": 1}).to_list(length=100)
+        userdata = [[l["username"],l["cpulimit"],l["memlimit"],l["podlimit"],l["timecreated"]] for l in doc]
     except:
         userdata = []
     return userdata
@@ -118,7 +120,7 @@ def getUserData(db):
 def getJobData(db, user):
     try:
         doc = yield db.users.find({"username":user},{"_id": 0 ,"jobs": 1}).to_list(length=1)
-        jobdata = [(l["jobid"], l["cpureq"], l["memreq"]) for l in doc[0]['jobs']]
+        jobdata = [(l["jobid"], l["cpureq"], l["memreq"], l["podreq"]) for l in doc[0]['jobs']]
     except:
         jobdata = []
     return jobdata
@@ -129,9 +131,6 @@ class MainHandler(tornado.web.RequestHandler):
         try:
             systemdata = yield getSystemState(db)
             userdata   = yield getUserData(db)
-            for user in userdata:
-                jobs = yield getJobData(db,user[0])
-                user.append(jobs)
             self.render('frontpage.html',
                 systemdata=systemdata, userdata=userdata)
         except Exception as e:
@@ -151,9 +150,17 @@ class JobManage(tornado.web.RequestHandler):
     def get(self):
         try:
             userdata = yield getUserData(db)
+
             for user in userdata:
                 jobs = yield getJobData(db,user[0])
+                cpuavail = str(float(user[1])-sum([float(job[1]) for job in jobs]))
+                memavail = str(float(user[2])-sum([float(job[2]) for job in jobs]))
+                podavail = str(float(user[3])-sum([float(job[3]) for job in jobs]))
+
                 user.append(jobs)
+                user.append(cpuavail)
+                user.append(memavail)
+                user.append(podavail)
             self.render('LandingPage.html',
                         userdata=userdata)
         except Exception as e:
@@ -168,15 +175,36 @@ class JobSubmit(tornado.web.RequestHandler):
             jobid = self.get_argument(user+"job")
             cpulim=self.get_argument(user+"cpu")
             memlim=self.get_argument(user+"mem")
-            submitjob(db,user,jobid,cpulim,memlim)
+            podlim=self.get_argument(user+"pod")
+            submitjob(db,user,jobid,cpulim,memlim,podlim)
             self.redirect('/jobmanage')
         except Exception as e:
             self.render('NotFound.html', errormessage="{}".format(e))
 
 class AddUser(tornado.web.RequestHandler):
+        @gen.coroutine
         def get(self):
             try:
-                self.render('AddUser.html', failmessage="", uri='/registeruser')
+                systemdata = yield getSystemState(db)
+                print(systemdata)
+                cpumax = float(systemdata[0])-float(systemdata[1])
+                cpuval = int(float(systemdata[0])/3)
+                cpuval = int(max(cpuval, cpumax/3.))
+
+                memmax = float(systemdata[2])-float(systemdata[3])
+                memval = int(float(systemdata[2])/3)
+                memval = int(max(memval, memmax/3.))
+
+                podmax = float(systemdata[4])-float(systemdata[5])
+                podval = int(float(systemdata[4])/3)
+                podval = int(max(podval, podmax/3.))
+
+                limitdata=[str(cpumax), str(cpuval), str(memmax), str(memval), str(podmax), str(podval)]
+
+                if cpumax <= 0 or memmax <= 0 or podmax <= 0:
+                    self.render('AddUser.html', failmessage="Not enough Resources. User cannot be created.", uri='', limitdata=limitdata)
+                else:
+                    self.render('AddUser.html', failmessage="", uri='/registeruser', limitdata=limitdata)
             except Exception as e:
                 self.render('NotFound.html', errormessage="{}".format(e))
 
