@@ -35,6 +35,9 @@ def getSystemState(db):
     try:
         api_response=kd.getSystemState()
         nodes = api_response.items
+        print('=========================================')
+        print(nodes[0])
+        print('=========================================')
         cpu_available = int(sum([float(n.status.allocatable["cpu"].strip('m')) for n in nodes]))
         mem_available = int(0.001*sum([int(n.status.allocatable["memory"].strip('Ki')) for n in nodes]))
         pod_available = sum([int(n.status.allocatable["pods"]) for n in nodes])

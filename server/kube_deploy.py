@@ -24,6 +24,27 @@ def getSystemState():
     except ApiException as e:
         print("Exception when calling CoreV1Api->list_node: %s\n" % e)
 
+def getNodeInfo(name):
+    try:
+        config.load_kube_config()
+    except:
+        config.load_incluster_config()
+
+    api = client.CoreV1Api()
+    pretty = 'true'
+    include_uninitialized = 'true'
+    limit = 10
+    timeout_seconds = 10
+    watch = 'true'
+    exact = 'true' # bool | Should the export be exact.  Exact export maintains cluster-specific fields like 'Namespace'. (optional)
+    export = 'true' # bool | Should this value be exported.  Export strips fields that a user can not specify. (optional)
+
+    try:
+        api_response = api.read_node(name, pretty=pretty, exact=exact, export=export)
+        return api_response
+    except ApiException as e:
+        print("Exception when calling CoreV1Api->read_node: %s\n" % e)
+
 
 def create_namespace(name):
     try:
