@@ -45,7 +45,6 @@ def getNodeInfo(name):
     except ApiException as e:
         print("Exception when calling CoreV1Api->read_node: %s\n" % e)
 
-
 def create_namespace(name):
     try:
         config.load_kube_config()
@@ -91,7 +90,7 @@ def create_limitrange(namespace, maxmem="500Mi", maxcpu="999m"):
     except ApiException as e:
         print("Exception when calling CoreV1Api->create_namespaced_limit_range: %s\n" % e)
 
-def create_quota(namespace, maxmem="500Mi", maxcpu="999m", maxpods="100"):
+def create_quota(namespace, maxmem="0Mi", maxcpu="0m", maxpods="0"):
     try:
         config.load_kube_config()
     except:
@@ -146,6 +145,29 @@ def create_deployment(namespace, name, cpulim, memlim, podlim):
         api_response = api.create_namespaced_deployment(namespace, body, pretty=pretty)
     except ApiException as e:
         pprint("Exception when calling AppsV1Api->create_namespaced_deployment: %s\n" % e)
+
+def update_quota(name, namespace, maxmem="0Mi", maxcpu="0m", maxpods="0"):
+    try:
+        config.load_kube_config()
+    except:
+        config.load_incluster_config()
+
+    api = client.CoreV1Api()
+    name = namespace
+    body = client.V1ResourceQuota(
+                api_version='v1',
+                kind="ResourceQuota",
+                metadata=client.V1ObjectMeta(name=namespace, namespace=namespace),
+                spec=client.V1ResourceQuotaSpec(
+                    hard={"cpu":maxcpu, "memory":maxmem, "pods":maxpods}
+                )
+            )
+    pretty = 'true'
+
+    try:
+        api_response = api.patch_namespaced_resource_quota(namespace, name, body, pretty=pretty)
+    except ApiException as e:
+        print("Exception when calling CoreV1Api->create_namespaced_limit_range: %s\n" % e)
 
 def delete_namespace(name):
     try:

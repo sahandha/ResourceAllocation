@@ -35,18 +35,15 @@ def getSystemState(db):
     try:
         api_response=kd.getSystemState()
         nodes = api_response.items
-        print('=========================================')
-        print(nodes[0])
-        print('=========================================')
         cpu_available = int(sum([float(n.status.allocatable["cpu"].strip('m')) for n in nodes]))
         mem_available = int(0.001*sum([int(n.status.allocatable["memory"].strip('Ki')) for n in nodes]))
         pod_available = sum([int(n.status.allocatable["pods"]) for n in nodes])
 
         userdata = yield getUserData(db)
 
-        cpu_used= int(sum([float(l[1]) for l in userdata]))
-        mem_used= int(sum([float(l[2]) for l in userdata]))
-        pod_used= int(sum([float(l[3]) for l in userdata]))
+        cpu_used= int(sum([float(l[1]) for l in userdata if l[4]=='active']))
+        mem_used= int(sum([float(l[2]) for l in userdata if l[4]=='active']))
+        pod_used= int(sum([float(l[3]) for l in userdata if l[4]=='active']))
 
         systemdata = [str(cpu_available), str(cpu_used),
                       str(mem_available), str(mem_used),
@@ -64,13 +61,62 @@ def CreateUser(db, username, namespace, cpulimit, memlimit, podlimit):
     'cpulimit':cpulimit,
     'memlimit':memlimit,
     'podlimit':podlimit,
+    'state':"inactive",
+    'activationrequested':'false',
     'jobs':[],
     'timecreated': str(datetime.now())
     })
 
     # Create namespace
     kd.create_namespace(namespace)
-    kd.create_quota(namespace, maxmem=memlimit+'Mi', maxcpu=cpulimit+'m', maxpods=podlimit)
+    kd.create_quota(namespace)
+
+@gen.coroutine
+def activateuser(db, username):
+    doc = yield db.users.find({"username":username},{"_id": 0 ,"namespace": 1, "cpulimit": 1, "memlimit": 1, "podlimit": 1}).to_list(length=1)
+    data = doc[0]
+
+    namespace = data["namespace"]
+    cpu = data["cpulimit"]
+    mem = data["memlimit"]
+    pod = data["podlimit"]
+    name = namespace
+
+    systemdata = yield getSystemState(db)
+
+    cpufree = float(systemdata[0])-float(systemdata[1])
+    memfree = float(systemdata[2])-float(systemdata[3])
+    podfree = float(systemdata[4])-float(systemdata[5])
+
+    if (cpufree < float(cpu)) or (cpufree < float(cpu)) or (cpufree < float(cpu)):
+        return "Error! Not enough resources available"
+
+    kd.update_quota(name, namespace, maxmem=mem+'Mi', maxcpu=cpu+'m', maxpods=pod   )
+    db.users.update_one(
+    {'username':username},
+    {
+        "$set":{
+        "state":"active"
+        }
+    })
+
+    return "success"
+
+@gen.coroutine
+def deactivateuser(db, username):
+    doc = yield db.users.find({"username":username},{"_id": 0 ,"namespace": 1}).to_list(length=1)
+    data = doc[0]
+    namespace = data["namespace"]
+    name = namespace
+
+    kd.update_quota(name, namespace, maxmem='0Mi', maxcpu='0m', maxpods='0')
+    db.users.update_one(
+    {'username':username},
+    {
+        "$set":{
+        "state":"inactive"
+        }
+    })
 
 @gen.coroutine
 def submitjob(db,user,jobid,cpulim, memlim, podlim):
@@ -86,6 +132,7 @@ def submitjob(db,user,jobid,cpulim, memlim, podlim):
         "jobs":jobs
         }
     })
+    activateuser(db, user)
     kd.create_deployment(namespace, jobid, cpulim+"m", memlim+"Mi", podlim)
 
 @gen.coroutine
@@ -113,8 +160,8 @@ def deleteJob(db, user, job):
 @gen.coroutine
 def getUserData(db):
     try:
-        doc = yield db.users.find({},{"_id": 0 ,"username": 1, "cpulimit": 1, "memlimit": 1, "podlimit": 1, "timecreated": 1}).to_list(length=100)
-        userdata = [[l["username"],l["cpulimit"],l["memlimit"],l["podlimit"],l["timecreated"]] for l in doc]
+        doc = yield db.users.find({},{"_id": 0 ,"username": 1, "cpulimit": 1, "memlimit": 1, "podlimit": 1, "state": 1, "timecreated": 1}).to_list(length=100)
+        userdata = [[l["username"],l["cpulimit"],l["memlimit"],l["podlimit"],l["state"],l["timecreated"]] for l in doc]
     except:
         userdata = []
     return userdata
@@ -166,6 +213,29 @@ class JobManage(tornado.web.RequestHandler):
                 user.append(podavail)
             self.render('LandingPage.html',
                         userdata=userdata)
+        except Exception as e:
+            self.render('NotFound.html', errormessage="{}".format(e))
+
+class ActivateUser(tornado.web.RequestHandler):
+    @gen.coroutine
+    def get(self):
+        try:
+            user  = self.get_argument("user")
+            message = yield activateuser(db, user)
+            print(message)
+            if message=='success':
+                self.redirect('/jobmanage')
+            else:
+                self.render('NotFound.html', errormessage="{}".format(message))
+        except Exception as e:
+            self.render('NotFound.html', errormessage="{}".format(e))
+
+class DeactivateUser(tornado.web.RequestHandler):
+    def get(self):
+        try:
+            user  = self.get_argument("user")
+            deactivateuser(db, user)
+            self.redirect('/')
         except Exception as e:
             self.render('NotFound.html', errormessage="{}".format(e))
 
@@ -275,6 +345,8 @@ settings=dict(
 )
 
 application = tornado.web.Application([
+    (r"/activateuser", ActivateUser),
+    (r"/deactivateuser", DeactivateUser),
     (r"/connecttocluster", ConnectToCluster),
     (r"/jobmanage", JobManage),
     (r"/adduser", AddUser),

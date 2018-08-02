@@ -17,8 +17,27 @@
     </tr>
   </thead>
   <tbody>
-    {% for (user,cpulim,memlim,podlim,time,jobs,cpuavail,memavail,podavail) in userdata %}
+    {% for (user,cpulim,memlim,podlim,state,time,jobs,cpuavail,memavail,podavail) in userdata %}
       <tr>
+        {% if state=='inactive' %}
+        <form action="/activateuser" method="GET" name="activationButton">
+          <td class="align-middle">{{escape(user)}}
+            <div style="display: none;">
+              <input name="user" value={{escape(user)}}></input>
+            </div>
+            <div>
+              <font size=2, color="gray">
+              {{escape(state)}}
+              </font>
+            </div>
+          </td>
+          <td></td><td></td><td></td><td></td>
+          <td class="text-center align-middle">
+            <input id="{{escape(user)}}activate" type="submit" value="Activate" class="btn btn-secondary"></input>
+          </td>
+          <td></td>
+        </form>
+        {% else %}
         <form action="jobsubmit" method="POST" name="myform">
         <td class="align-middle">{{escape(user)}}
           <div style="display: none;">
@@ -64,7 +83,7 @@
             </div>
           </div>
         </td>
-        <td class="text-center align-middle">
+        <td class="text-center align-middle" name="submitbutton">
             <input id="{{escape(user)}}submit" type="submit" value="Submit Job" class="btn btn-primary"></input>
         </td>
         </form>
@@ -142,6 +161,7 @@
           <!-- =============== Modal ends now ================== -->
           {% end %}
         </td>
+        {% end %}
       </tr>
 
     {% end %}
