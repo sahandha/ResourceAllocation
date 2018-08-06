@@ -57,23 +57,23 @@
             <tr>
               <td class="align-middle">{{escape(user)}}
               </td>
-              <td class="align-middle">
+              <td class="text-center align-middle" name="cpulim">
                 {{escape(cpulim)}}
               </td>
-              <td class="text-center align-middle">
+              <td class="text-center align-middle" name="memlim">
                 {{escape(memlim)}}
               </td>
-              <td class="text-center align-middle">
+              <td class="text-center align-middle" name="podlim">
                 {{escape(podlim)}}
               </td>
-              <td class="text-center align-middle">
+              <td class="text-center align-middle" name="state">
                 {% if state == 'active'%}
                   <font color=green>{{escape(state)}}</font>
                 {% else %}
                   <font color=red>{{escape(state)}}</font>
                 {% end %}
               </td>
-              <td class="text-center align-middle">
+              <td class="text-center align-middle" name="timeremaining">
                 {% if state == "active"%}
                   {{escape(time)}}
                 {% end %}

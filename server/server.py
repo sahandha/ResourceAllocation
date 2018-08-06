@@ -1,12 +1,14 @@
 import tornado.ioloop
 import tornado.web
+from tornado.web import asynchronous
 import subprocess
 import os
 from shutil import rmtree
 import motor.motor_tornado
 from tornado import gen
 import kube_deploy as kd
-from datetime import datetime
+from datetime import datetime, timedelta
+from apscheduler.schedulers.tornado import TornadoScheduler
 
 
 __ROOT__     = os.path.join(os.path.dirname(__file__))
@@ -22,6 +24,8 @@ __TotalMem__ = 5000
 
 
 db = motor.motor_tornado.MotorClient().ResourceAllocation
+scheduler = TornadoScheduler()
+scheduler.start()
 
 @gen.coroutine
 def getHardInquiry(db):
@@ -64,7 +68,7 @@ def CreateUser(db, username, namespace, cpulimit, memlimit, podlimit):
     'state':"inactive",
     'activationrequested':'false',
     'jobs':[],
-    'timecreated': str(datetime.now())
+    'expirationdate': datetime.now()+timedelta(hours=1000)
     })
 
     # Create namespace
@@ -91,15 +95,18 @@ def activateuser(db, username):
     if (cpufree < float(cpu)) or (cpufree < float(cpu)) or (cpufree < float(cpu)):
         return "Error! Not enough resources available"
 
-    kd.update_quota(name, namespace, maxmem=mem+'Mi', maxcpu=cpu+'m', maxpods=pod   )
+    kd.update_quota(name, namespace, maxmem=mem+'Mi', maxcpu=cpu+'m', maxpods=pod)
+    expirationdate = datetime.now()+timedelta(hours=0.01)
     db.users.update_one(
     {'username':username},
     {
         "$set":{
-        "state":"active"
+        "state":"active",
+        'expirationdate': expirationdate
         }
     })
 
+    ret1 = scheduler.add_job(lambda: deactivateuser(db, username), 'interval', seconds=10, id=username)
     return "success"
 
 @gen.coroutine
@@ -110,6 +117,7 @@ def deactivateuser(db, username):
     name = namespace
 
     kd.update_quota(name, namespace, maxmem='0Mi', maxcpu='0m', maxpods='0')
+    #kd.delete_deployment()
     db.users.update_one(
     {'username':username},
     {
@@ -117,6 +125,7 @@ def deactivateuser(db, username):
         "state":"inactive"
         }
     })
+    scheduler.remove_job(username)
 
 @gen.coroutine
 def submitjob(db,user,jobid,cpulim, memlim, podlim):
@@ -160,8 +169,8 @@ def deleteJob(db, user, job):
 @gen.coroutine
 def getUserData(db):
     try:
-        doc = yield db.users.find({},{"_id": 0 ,"username": 1, "cpulimit": 1, "memlimit": 1, "podlimit": 1, "state": 1, "timecreated": 1}).to_list(length=100)
-        userdata = [[l["username"],l["cpulimit"],l["memlimit"],l["podlimit"],l["state"],l["timecreated"]] for l in doc]
+        doc = yield db.users.find({},{"_id": 0 ,"username": 1, "cpulimit": 1, "memlimit": 1, "podlimit": 1, "state": 1, "expirationdate": 1}).to_list(length=100)
+        userdata = [[l["username"],l["cpulimit"],l["memlimit"],l["podlimit"],l["state"],str(l["expirationdate"]-datetime.now())] for l in doc]
     except:
         userdata = []
     return userdata
@@ -174,6 +183,11 @@ def getJobData(db, user):
     except:
         jobdata = []
     return jobdata
+
+def tick():
+    print('Tick! The time is: %s' % datetime.now())
+
+
 
 class MainHandler(tornado.web.RequestHandler):
     @gen.coroutine
@@ -222,7 +236,6 @@ class ActivateUser(tornado.web.RequestHandler):
         try:
             user  = self.get_argument("user")
             message = yield activateuser(db, user)
-            print(message)
             if message=='success':
                 self.redirect('/jobmanage')
             else:
@@ -259,7 +272,6 @@ class AddUser(tornado.web.RequestHandler):
         def get(self):
             try:
                 systemdata = yield getSystemState(db)
-                print(systemdata)
                 cpumax = float(systemdata[0])-float(systemdata[1])
                 cpuval = int(float(systemdata[0])/3)
                 cpuval = int(max(cpuval, cpumax/3.))
@@ -361,6 +373,6 @@ application = tornado.web.Application([
 
 if __name__=="__main__":
     print("server running at localhost:8888 ...")
-    print("press ctrl+c to close.")
+    ("press ctrl+c to close.")
     application.listen(8888)
     tornado.ioloop.IOLoop.instance().start()

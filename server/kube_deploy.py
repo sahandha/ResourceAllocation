@@ -57,7 +57,6 @@ def create_namespace(name):
     pretty = 'true'
     try:
         api_response = api.create_namespace(body, pretty=pretty)
-        #pprint(api_response)
     except ApiException as e:
         print("Exception when calling CoreV1Api->create_namespace: %s\n" % e)
 
@@ -183,7 +182,6 @@ def delete_namespace(name):
     propagation_policy = "Background"
     try:
         api_response = api.delete_namespace(name, body, pretty=pretty, grace_period_seconds=grace_period_seconds, propagation_policy=propagation_policy)
-        pprint(api_response)
     except ApiException as e:
         print("Exception when calling CoreV1Api->delete_namespace: %s\n" % e)
 
@@ -202,7 +200,6 @@ def delete_deployment(namespace,name):
 
     try:
         api_response = api.delete_namespaced_deployment(name, namespace, body, pretty=pretty)
-        #pprint(api_response)
     except ApiException as e:
         print("Exception when calling ExtensionsV1beta1Api->delete_namespaced_deployment: %s\n" % e)
 
