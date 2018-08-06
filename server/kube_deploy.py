@@ -203,6 +203,17 @@ def delete_deployment(namespace,name):
     except ApiException as e:
         print("Exception when calling ExtensionsV1beta1Api->delete_namespaced_deployment: %s\n" % e)
 
+def namepace_cleanup(namespace):
+    try:
+        config.load_kube_config()
+    except:
+        config.load_incluster_config()
+
+    api = client.ExtensionsV1beta1Api()
+    deps = api.list_namespaced_deployment(namespace)
+    for dep in deps.items:
+        delete_deployment(namespace,dep.metadata.name)
+
 def main(action='', user='test', token='qwerty', passwd=None):
     print("Call functions directly")
 

@@ -96,7 +96,7 @@ def activateuser(db, username):
         return "Error! Not enough resources available"
 
     kd.update_quota(name, namespace, maxmem=mem+'Mi', maxcpu=cpu+'m', maxpods=pod)
-    expirationdate = datetime.now()+timedelta(hours=0.01)
+    expirationdate = datetime.now()+timedelta(hours=1./6.)
     db.users.update_one(
     {'username':username},
     {
@@ -106,7 +106,7 @@ def activateuser(db, username):
         }
     })
 
-    ret1 = scheduler.add_job(lambda: deactivateuser(db, username), 'interval', seconds=10, id=username)
+    scheduler.add_job(lambda: deactivateuser(db, username), 'interval', minutes=10, id=username)
     return "success"
 
 @gen.coroutine
@@ -116,8 +116,11 @@ def deactivateuser(db, username):
     namespace = data["namespace"]
     name = namespace
 
+    kd.namepace_cleanup(namespace)
     kd.update_quota(name, namespace, maxmem='0Mi', maxcpu='0m', maxpods='0')
-    #kd.delete_deployment()
+
+    deleteJob(db, username, "All")
+
     db.users.update_one(
     {'username':username},
     {
@@ -155,8 +158,13 @@ def deleteUsers(db, usernames):
 def deleteJob(db, user, job):
     doc = yield db.users.find({"username":user},{"_id": 0 ,"username": 1, "namespace": 1, "jobs": 1 }).to_list(length=1)
     namespace = doc[0]["namespace"]
-    jobs=doc[0]["jobs"]
-    jobs = [x for x in jobs if x['jobid'] != job]
+
+    if job == "All":
+        jobs = []
+    else:
+        jobs=doc[0]["jobs"]
+        jobs = [x for x in jobs if x['jobid'] != job]
+
     db.users.update_one(
     {'username':user},
     {
@@ -183,9 +191,6 @@ def getJobData(db, user):
     except:
         jobdata = []
     return jobdata
-
-def tick():
-    print('Tick! The time is: %s' % datetime.now())
 
 
 
