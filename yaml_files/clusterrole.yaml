@@ -1,0 +1,9 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  namespace: resourceallocation
+  name: resourceallocation
+rules:
+- apiGroups: [""] # "" indicates the core API group
+  resources: ["pods","deployments","replicasets","replicationcontrollers"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
