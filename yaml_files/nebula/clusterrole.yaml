@@ -5,5 +5,5 @@ metadata:
   name: resourceallocation
 rules:
 - apiGroups: [""] # "" indicates the core API group
-  resources: ["nodes", "pods","deployments","replicasets","replicationcontrollers"]
+  resources: ["nodes", "namespaces", "pods","deployments","replicasets","replicationcontrollers"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
