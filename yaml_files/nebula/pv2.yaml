@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: volum-nfs
+  namespace: resourceallocation
+spec:
+  capacity:
+    storage: 25Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 10.98.159.44
+    path: "/"
+ ---
+ apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: volume
+  namespace: resourceallocation
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 25Gi
