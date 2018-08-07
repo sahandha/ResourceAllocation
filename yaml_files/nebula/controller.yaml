@@ -1,0 +1,50 @@
+kind: ReplicationController
+apiVersion: v1
+metadata:
+  name: resourceallocation
+  namespace: resourceallocation
+spec:
+  replicas: 1
+  selector:
+    component: resourceallocation 
+  template:
+    metadata:
+      labels:
+        component: resourceallocation
+    spec:
+      containers:
+        - name: resourceallocation
+          image: sahandha/resourceallocation
+          imagePullPolicy: Always
+          command: ["/bin/sh"]
+          args: ["-c","cp -r /external/server /external/shared; python /external/shared/server/server.py"]
+          ports:
+            - containerPort: 27017
+            - containerPort: 8888 
+          volumeMounts:
+            - mountPath: /external/shared
+              name: volume
+          resources:
+            requests:
+              cpu: 100m
+        - name: mongodb
+          image: mongo
+          imagePullPolicy: Always
+          command: ["mongod"]
+          ports:
+            - containerPort: 27017
+            - containerPort: 8888 
+          volumeMounts:
+            - mountPath: /external/shared
+              name: mongodb-volume
+          resources:
+            requests:
+              cpu: 100m
+      volumes:
+        - name: volume
+          persistentVolumeClaim:
+            claimName: volume
+        - name: mongodb-volume
+          persistentVolumeClaim:
+            claimName: mongodb-volume
+
