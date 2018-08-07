@@ -144,7 +144,6 @@ def submitjob(db,user,jobid,cpulim, memlim, podlim):
         "jobs":jobs
         }
     })
-    activateuser(db, user)
     kd.create_deployment(namespace, jobid, cpulim+"m", memlim+"Mi", podlim)
 
 @gen.coroutine
@@ -153,6 +152,7 @@ def deleteUsers(db, usernames):
         doc = yield db.users.find({"username":user},{"_id": 0 ,"username": 1, "namespace": 1 }).to_list(length=1)
         db.users.delete_one({"username":doc[0]["username"]})
         kd.delete_namespace(doc[0]["namespace"])
+        scheduler.remove_job(user)
 
 @gen.coroutine
 def deleteJob(db, user, job):
