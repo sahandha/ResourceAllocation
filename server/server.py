@@ -96,7 +96,7 @@ def activateuser(db, username):
         return "Error! Not enough resources available"
 
     kd.update_quota(name, namespace, maxmem=mem+'Mi', maxcpu=cpu+'m', maxpods=pod)
-    expirationdate = datetime.now()+timedelta(hours=1./6.)
+    expirationdate = datetime.now()+timedelta(hours=1./30.)
     db.users.update_one(
     {'username':username},
     {
@@ -106,7 +106,7 @@ def activateuser(db, username):
         }
     })
 
-    scheduler.add_job(lambda: deactivateuser(db, username), 'interval', minutes=10, id=username)
+    scheduler.add_job(lambda: deactivateuser(db, username), 'interval', minutes=2, id=username)
     return "success"
 
 @gen.coroutine
