@@ -36,10 +36,15 @@ def getHardInquiry(db):
 
 @gen.coroutine
 def getSystemState(db):
+    def cpuReader(str):
+        if str.count("m")==0:
+            return 1000*float(str)
+        else:
+            return float(str.strip("m"))
     try:
         api_response=kd.getSystemState()
         nodes = api_response.items
-        cpu_available = int(sum([float(n.status.allocatable["cpu"].strip('m')) for n in nodes]))
+        cpu_available = int(sum([cpuReader(n.status.allocatable["cpu"]) for n in nodes]))
         mem_available = int(0.001*sum([int(n.status.allocatable["memory"].strip('Ki')) for n in nodes]))
         pod_available = sum([int(n.status.allocatable["pods"]) for n in nodes])
 
