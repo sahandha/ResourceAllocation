@@ -167,7 +167,7 @@ def deleteJob(db, user, job):
     namespace = doc[0]["namespace"]
 
     if job == "All":
-        kd.namepace_cleanup(namespace)
+        kd.namespace_cleanup(namespace)
         jobs = []
     else:
         kd.delete_deployment(namespace, job)
