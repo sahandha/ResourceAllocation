@@ -8,8 +8,6 @@ import motor.motor_tornado
 from tornado import gen
 import kube_deploy as kd
 from datetime import datetime, timedelta
-from apscheduler.schedulers.tornado import TornadoScheduler
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 
 __ROOT__     = os.path.join(os.path.dirname(__file__))
@@ -25,8 +23,6 @@ __TotalMem__ = 5000
 
 
 db = motor.motor_tornado.MotorClient().ResourceAllocation
-scheduler = AsyncIOScheduler()
-scheduler.start()
 
 @gen.coroutine
 def getHardInquiry(db):
@@ -118,8 +114,11 @@ def activateuser(db, username):
         }
     })
 
-    scheduler.add_job(lambda: deactivateuser(db, username), 'interval', minutes=2, id=username)
     return "success"
+
+
+def printerguy():
+    print("scheduler is set")
 
 @gen.coroutine
 def deactivateuser(db, username):
@@ -127,9 +126,6 @@ def deactivateuser(db, username):
     data = doc[0]
     namespace = data["namespace"]
     name = namespace
-
-    kd.namepace_cleanup(namespace)
-
 
     deleteJob(db, username, "All")
 
@@ -140,7 +136,6 @@ def deactivateuser(db, username):
         "state":"inactive"
         }
     })
-    scheduler.remove_job(username)
 
 @gen.coroutine
 def submitjob(db,user,jobid,cpulim, memlim, podlim):
@@ -162,8 +157,6 @@ def submitjob(db,user,jobid,cpulim, memlim, podlim):
 def deleteUsers(db, usernames):
     for user in usernames:
         doc = yield db.users.find({"username":user},{"_id": 0 ,"username": 1, "namespace": 1, "state": 1 }).to_list(length=1)
-        if doc[0]["state"]=="active":
-            scheduler.remove_job(user)
         db.users.delete_one({"username":doc[0]["username"]})
         kd.delete_namespace(doc[0]["namespace"])
 
@@ -174,8 +167,10 @@ def deleteJob(db, user, job):
     namespace = doc[0]["namespace"]
 
     if job == "All":
+        kd.namepace_cleanup(namespace)
         jobs = []
     else:
+        kd.delete_deployment(namespace, job)
         jobs=doc[0]["jobs"]
         jobs = [x for x in jobs if x['jobid'] != job]
 
@@ -186,7 +181,7 @@ def deleteJob(db, user, job):
         "jobs":jobs
         }
     })
-    kd.delete_deployment(namespace, job)
+
 
 @gen.coroutine
 def getUserData(db):
