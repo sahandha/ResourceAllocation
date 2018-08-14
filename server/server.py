@@ -9,6 +9,7 @@ from tornado import gen
 import kube_deploy as kd
 from datetime import datetime, timedelta
 from apscheduler.schedulers.tornado import TornadoScheduler
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 
 __ROOT__     = os.path.join(os.path.dirname(__file__))
@@ -24,7 +25,7 @@ __TotalMem__ = 5000
 
 
 db = motor.motor_tornado.MotorClient().ResourceAllocation
-scheduler = TornadoScheduler()
+scheduler = AsyncIOScheduler()
 scheduler.start()
 
 @gen.coroutine
