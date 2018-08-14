@@ -364,11 +364,14 @@ class RegistrationHandler(tornado.web.RequestHandler):
         except Exception as e:
             self.render('NotFound.html', errormessage="{}".format(e))
 
+class NotFoundHandler(tornado.web.RequestHandler):
+    @gen.coroutine
+    def get(self):
+        self.render('NotFound.html', errormessage="not found")
+
 settings=dict(
     template_path=__TEMPLATE__,
     static_path=__STATIC__,
-    users_path=__USERS__,
-    current_user='no_user',
     totalcpu=__TotalCPU__,
     db=db,
     debug=True
@@ -386,7 +389,8 @@ application = tornado.web.Application([
     (r"/lsstsim/jobsubmit", JobSubmit),
     (r"/lsstsim/jobkill", DeleteJob),
     (r"/lsstsim/projectload(.*)",tornado.web.StaticFileHandler, {"path": "./static"}),
-    (r"/lsstsim", MainHandler)
+    (r"/lsstsim", MainHandler),
+    (r"/lsstsim/.*", NotFoundHandler)
 ],**settings)
 
 if __name__=="__main__":
