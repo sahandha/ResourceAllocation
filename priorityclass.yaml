@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 apiVersion: scheduling.k8s.io/SchedulingV1beta1
+=======
+apiVersion: scheduling.k8s.io/v1alpha1
+>>>>>>> f851bddaf6e715e8dac44c2c8959d7048ccc32be
 kind: PriorityClass
 metadata:
   name: high-priority

@@ -1,0 +1,12 @@
+kind: Ingress
+metadata:
+ name: resourceallocation
+ namespace: resourceallocation
+spec:
+  rules:
+  - http:
+     paths:
+     - path: /lsstsim
+       backend:
+         serviceName: resourceallocation
+         servicePort: 8888

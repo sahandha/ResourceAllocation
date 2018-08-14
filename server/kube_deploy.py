@@ -44,6 +44,40 @@ def getNodeInfo(name):
     except ApiException as e:
         print("Exception when calling CoreV1Api->read_node: %s\n" % e)
 
+
+def create_priority_class(name, level, default="false"):
+    try:
+        config.load_kube_config()
+    except:
+        config.load_incluster_config()
+
+    api = client.SchedulingV1alpha1Api()
+    pretty = 'true'
+
+    body = client.V1alpha1PriorityClass(value=level, global_default=default, metadata=client.V1ObjectMeta(name=name))
+
+
+    try:
+        api_response = api.create_priority_class(body, pretty=pretty)
+        return api_response
+    except ApiException as e:
+        print("Exception when calling SchedulingV1alpha1Api->create_priority_class: %s\n" % e)
+
+def list_priority_class():
+    try:
+        config.load_kube_config()
+    except:
+        config.load_incluster_config()
+
+    api = client.SchedulingV1alpha1Api()
+
+    try:
+        api_response = api.list_priority_class()
+        return api_response
+    except ApiException as e:
+        print("Exception when calling SchedulingV1alpha1Api->list_priority_class: %s\n" % e)
+
+
 def create_namespace(name):
     try:
         config.load_kube_config()
@@ -212,6 +246,7 @@ def namepace_cleanup(namespace):
     deps = api.list_namespaced_deployment(namespace)
     for dep in deps.items:
         delete_deployment(namespace,dep.metadata.name)
+    update_quota(namespace, namespace, maxmem='0Mi', maxcpu='0m', maxpods='0')
 
 def main(action='', user='test', token='qwerty', passwd=None):
     print("Call functions directly")

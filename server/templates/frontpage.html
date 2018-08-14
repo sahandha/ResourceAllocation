@@ -6,7 +6,7 @@
     <div class=well>
     <div class="row text-center">
       {% if len(systemdata)==0%}
-        <a href="/connecttocluster" method="GET"><font color=gray> Connect to Cluster</font></a>
+        <a href="/lsstsim/connecttocluster" method="GET"><font color=gray> Connect to Cluster</font></a>
       {% else %}
       <div class="col-md-4 text-center" name="cpuusage">
         <div class="knob" min=0 max={{escape(systemdata[0])}} value={{escape(systemdata[1])}} size=200 readonly=true>
@@ -80,14 +80,14 @@
               </td>
               <td class="text-center align-middle" name="deactivationButton">
                 {% if state == "active" %}
-                <form action="/deactivateuser" method="GET" name="deactivationForm">
+                <form action="/lsstsim/deactivateuser" method="GET" name="deactivationForm">
                   <div style="display: none;">
                     <input name="user" value={{escape(user)}}></input>
                   </div>
                   <input id="{{escape(user)}}deactivate" type="submit" value="Deactivate" class="btn btn-secondary"></input>
                 </form>
                 {% else %}
-                  <form action="/activateuser" method="GET" name="activationForm">
+                  <form action="/lsstsim/activateuser" method="GET" name="activationForm">
                   <div style="display: none;">
                     <input name="user" value={{escape(user)}}></input>
                   </div>
@@ -101,13 +101,13 @@
       </table>
     </div>
     <div class="well text-center" name="adduser">
-        <a href="/adduser" method="GET"><font color=gray>Add Users</font></a>
+        <a href="/lsstsim/adduser" method="GET"><font color=gray>Add Users</font></a>
     </div>
     <div class="well text-center" name="managejob">
-      <a href="/jobmanage" method="GET"><font color=gray>Manage Jobs</font></a>
+      <a href="/lsstsim/jobmanage" method="GET"><font color=gray>Manage Jobs</font></a>
     </div>
     <div class="well text-center" name="deleteuser">
-      <a href="/deleteuser" method="GET"><font color=gray>Delete Users</font></a>
+      <a href="/lsstsim/deleteuser" method="GET"><font color=gray>Delete Users</font></a>
     </div>
   </div>
   <!--img  width="100%" src="{{static_url('images/allocation.jpg')}}" -->
