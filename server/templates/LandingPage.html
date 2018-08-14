@@ -20,7 +20,7 @@
     {% for (user,cpulim,memlim,podlim,state,time,jobs,cpuavail,memavail,podavail) in userdata %}
       <tr>
         {% if state=='inactive' %}
-        <form action="/activateuser" method="GET" name="activationButton">
+        <form action="/lsstsim/activateuser" method="GET" name="activationButton">
           <td class="align-middle">{{escape(user)}}
             <div style="display: none;">
               <input name="user" value={{escape(user)}}></input>
@@ -38,7 +38,7 @@
           <td></td>
         </form>
         {% else %}
-        <form action="jobsubmit" method="POST" name="myform">
+        <form action="/lsstsim/jobsubmit" method="POST" name="myform">
         <td class="align-middle">{{escape(user)}}
           <div style="display: none;">
             <input name="user" value={{escape(user)}}></input>
@@ -138,7 +138,7 @@
                             </div>
                           </td>
                           <td class="text-center align-middle">
-                            <form action="/jobkill" method="POST" name="{{escape(jobid)}}jobform">
+                            <form action="/lsstsim/jobkill" method="POST" name="{{escape(jobid)}}jobform">
                               <div style="display: none;">
                                 <input name="username" value={{escape(user)}}></input>
                               </div>

@@ -36,6 +36,12 @@ def getHardInquiry(db):
 
 @gen.coroutine
 def getSystemState(db):
+
+    #kd.create_priority_class("SpecialUser",1000, default="false")
+    #kd.create_priority_class("CommonUser",500, default="true")
+    #pc = kd.list_priority_class()
+    #print(pc)
+
     def cpuReader(str):
         if str.count("m")==0:
             return 1000*float(str)
@@ -111,7 +117,7 @@ def activateuser(db, username):
         }
     })
 
-    scheduler.add_job(lambda: deactivateuser(db, username), 'interval', minutes=2, id=username)
+    #scheduler.add_job(lambda: deactivateuser(db, username), 'interval', minutes=2, id=username)
     return "success"
 
 @gen.coroutine
@@ -122,7 +128,7 @@ def deactivateuser(db, username):
     name = namespace
 
     kd.namepace_cleanup(namespace)
-    kd.update_quota(name, namespace, maxmem='0Mi', maxcpu='0m', maxpods='0')
+
 
     deleteJob(db, username, "All")
 
@@ -133,7 +139,7 @@ def deactivateuser(db, username):
         "state":"inactive"
         }
     })
-    scheduler.remove_job(username)
+    #scheduler.remove_job(username)
 
 @gen.coroutine
 def submitjob(db,user,jobid,cpulim, memlim, podlim):
@@ -157,7 +163,7 @@ def deleteUsers(db, usernames):
         doc = yield db.users.find({"username":user},{"_id": 0 ,"username": 1, "namespace": 1 }).to_list(length=1)
         db.users.delete_one({"username":doc[0]["username"]})
         kd.delete_namespace(doc[0]["namespace"])
-        scheduler.remove_job(user)
+        #scheduler.remove_job(user)
 
 @gen.coroutine
 def deleteJob(db, user, job):
@@ -215,7 +221,7 @@ class ConnectToCluster(tornado.web.RequestHandler):
     def get(self):
         try:
             getHardInquiry(db)
-            self.redirect('/')
+            self.redirect('/lsstsim')
         except Exception as e:
             self.render('NotFound.html', errormessage="{}".format(e))
 
@@ -247,7 +253,7 @@ class ActivateUser(tornado.web.RequestHandler):
             user  = self.get_argument("user")
             message = yield activateuser(db, user)
             if message=='success':
-                self.redirect('/jobmanage')
+                self.redirect('/lsstsim/jobmanage')
             else:
                 self.render('NotFound.html', errormessage="{}".format(message))
         except Exception as e:
@@ -258,7 +264,7 @@ class DeactivateUser(tornado.web.RequestHandler):
         try:
             user  = self.get_argument("user")
             deactivateuser(db, user)
-            self.redirect('/')
+            self.redirect('/lsstsim')
         except Exception as e:
             self.render('NotFound.html', errormessage="{}".format(e))
 
@@ -273,7 +279,7 @@ class JobSubmit(tornado.web.RequestHandler):
             memlim=self.get_argument(user+"mem")
             podlim=self.get_argument(user+"pod")
             submitjob(db,user,jobid,cpulim,memlim,podlim)
-            self.redirect('/jobmanage')
+            self.redirect('/lsstsim/jobmanage')
         except Exception as e:
             self.render('NotFound.html', errormessage="{}".format(e))
 
@@ -299,7 +305,7 @@ class AddUser(tornado.web.RequestHandler):
                 if cpumax <= 0 or memmax <= 0 or podmax <= 0:
                     self.render('AddUser.html', failmessage="Not enough Resources. User cannot be created.", uri='', limitdata=limitdata)
                 else:
-                    self.render('AddUser.html', failmessage="", uri='/registeruser', limitdata=limitdata)
+                    self.render('AddUser.html', failmessage="", uri='/lsstsim/registeruser', limitdata=limitdata)
             except Exception as e:
                 self.render('NotFound.html', errormessage="{}".format(e))
 
@@ -309,7 +315,7 @@ class DeleteUser(tornado.web.RequestHandler):
             userdata = yield getUserData(db)
             users = [l[0] for l in userdata]
             try:
-                self.render('DeleteUser.html', users=users, uri='/deleteselectedusers')
+                self.render('DeleteUser.html', users=users, uri='/lsstsim/deleteselectedusers')
             except Exception as e:
                 self.render('NotFound.html', errormessage="{}".format(e))
 
@@ -327,7 +333,7 @@ class DeleteSelectedUsers(tornado.web.RequestHandler):
                     except:
                         pass
                 deleteUsers(db, tobedeleted)
-                self.redirect('/')
+                self.redirect('/lsstsim')
             except Exception as e:
                 self.render('NotFound.html', errormessage="{}".format(e))
 
@@ -338,7 +344,7 @@ class DeleteJob(tornado.web.RequestHandler):
             user  = self.get_argument("username")
             jobid = self.get_argument("jobname")
             deleteJob(db, user, jobid)
-            self.redirect('/jobmanage')
+            self.redirect('/lsstsim/jobmanage')
         except Exception as e:
             self.render('NotFound.html', errormessage="{}".format(e))
 
@@ -352,7 +358,7 @@ class RegistrationHandler(tornado.web.RequestHandler):
             memlimit  = self.get_argument('memlimit')
             podlimit  = self.get_argument('podlimit')
             CreateUser(db, username, namespace, cpulimit, memlimit, podlimit)
-            self.redirect('/')
+            self.redirect('/lsstsim')
         except Exception as e:
             self.render('NotFound.html', errormessage="{}".format(e))
 
@@ -367,18 +373,18 @@ settings=dict(
 )
 
 application = tornado.web.Application([
-    (r"/activateuser", ActivateUser),
-    (r"/deactivateuser", DeactivateUser),
-    (r"/connecttocluster", ConnectToCluster),
-    (r"/jobmanage", JobManage),
-    (r"/adduser", AddUser),
-    (r"/deleteuser", DeleteUser),
-    (r"/deleteselectedusers", DeleteSelectedUsers),
-    (r"/registeruser", RegistrationHandler),
-    (r"/jobsubmit", JobSubmit),
-    (r"/jobkill", DeleteJob),
-    (r"/projectload(.*)",tornado.web.StaticFileHandler, {"path": "./static"}),
-    (r"/", MainHandler)
+    (r"/lsstsim/activateuser", ActivateUser),
+    (r"/lsstsim/deactivateuser", DeactivateUser),
+    (r"/lsstsim/connecttocluster", ConnectToCluster),
+    (r"/lsstsim/jobmanage", JobManage),
+    (r"/lsstsim/adduser", AddUser),
+    (r"/lsstsim/deleteuser", DeleteUser),
+    (r"/lsstsim/deleteselectedusers", DeleteSelectedUsers),
+    (r"/lsstsim/registeruser", RegistrationHandler),
+    (r"/lsstsim/jobsubmit", JobSubmit),
+    (r"/lsstsim/jobkill", DeleteJob),
+    (r"/lsstsim/projectload(.*)",tornado.web.StaticFileHandler, {"path": "./static"}),
+    (r"/lsstsim", MainHandler)
 ],**settings)
 
 if __name__=="__main__":
