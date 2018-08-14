@@ -117,7 +117,7 @@ def activateuser(db, username):
         }
     })
 
-    #scheduler.add_job(lambda: deactivateuser(db, username), 'interval', minutes=2, id=username)
+    scheduler.add_job(lambda: deactivateuser(db, username), 'interval', minutes=2, id=username)
     return "success"
 
 @gen.coroutine
@@ -139,7 +139,7 @@ def deactivateuser(db, username):
         "state":"inactive"
         }
     })
-    #scheduler.remove_job(username)
+    scheduler.remove_job(username)
 
 @gen.coroutine
 def submitjob(db,user,jobid,cpulim, memlim, podlim):
@@ -160,10 +160,12 @@ def submitjob(db,user,jobid,cpulim, memlim, podlim):
 @gen.coroutine
 def deleteUsers(db, usernames):
     for user in usernames:
-        doc = yield db.users.find({"username":user},{"_id": 0 ,"username": 1, "namespace": 1 }).to_list(length=1)
+        doc = yield db.users.find({"username":user},{"_id": 0 ,"username": 1, "namespace": 1, "state": 1 }).to_list(length=1)
+        if doc[0]["state"]=="active":
+            scheduler.remove_job(user)
         db.users.delete_one({"username":doc[0]["username"]})
         kd.delete_namespace(doc[0]["namespace"])
-        #scheduler.remove_job(user)
+
 
 @gen.coroutine
 def deleteJob(db, user, job):
