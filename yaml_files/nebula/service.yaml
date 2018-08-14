@@ -8,6 +8,7 @@ spec:
     - port: 8888
       targetPort: 8888
       nodePort: 30000
+      protocol: TCP
   selector:
     component: resourceallocation
   type: NodePort
