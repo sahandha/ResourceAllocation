@@ -23,8 +23,6 @@ __TotalMem__ = 5000
 
 
 db = motor.motor_tornado.MotorClient().ResourceAllocation
-scheduler = AsyncIOScheduler()
-scheduler.start()
 
 @gen.coroutine
 def getHardInquiry(db):
