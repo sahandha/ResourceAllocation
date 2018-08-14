@@ -266,7 +266,7 @@ def delete_all_deployments(namespace):
         print("Exception when calling ExtensionsV1beta1Api->delete_namespaced_deployment: %s\n" % e)
 
 
-def namepace_cleanup(namespace):
+def namespace_cleanup(namespace):
     delete_all_deployments(namespace)
     update_quota(namespace, namespace, maxmem='0Mi', maxcpu='0m', maxpods='0')
 

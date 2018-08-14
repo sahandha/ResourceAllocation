@@ -65,10 +65,11 @@ def getSystemState(db):
         systemdata = []
     return systemdata
 
-def CreateUser(db, username, namespace, cpulimit, memlimit, podlimit):
+def CreateUser(db, username, userclass, namespace, cpulimit, memlimit, podlimit):
     # insert user info into database
     db.users.insert_one({
     'username':username,
+    'userclass': userclass,
     'namespace':namespace,
     'cpulimit':cpulimit,
     'memlimit':memlimit,
@@ -82,6 +83,7 @@ def CreateUser(db, username, namespace, cpulimit, memlimit, podlimit):
     # Create namespace
     kd.create_namespace(namespace)
     kd.create_quota(namespace)
+
 
 @gen.coroutine
 def activateuser(db, username):
@@ -115,10 +117,6 @@ def activateuser(db, username):
     })
 
     return "success"
-
-
-def printerguy():
-    print("scheduler is set")
 
 @gen.coroutine
 def deactivateuser(db, username):
@@ -167,7 +165,7 @@ def deleteJob(db, user, job):
     namespace = doc[0]["namespace"]
 
     if job == "All":
-        kd.namepace_cleanup(namespace)
+        kd.namespace_cleanup(namespace)
         jobs = []
     else:
         kd.delete_deployment(namespace, job)
@@ -300,10 +298,10 @@ class AddUser(tornado.web.RequestHandler):
 
                 limitdata=[str(cpumax), str(cpuval), str(memmax), str(memval), str(podmax), str(podval)]
 
-                if cpumax <= 0 or memmax <= 0 or podmax <= 0:
-                    self.render('AddUser.html', failmessage="Not enough Resources. User cannot be created.", uri='', limitdata=limitdata)
-                else:
-                    self.render('AddUser.html', failmessage="", uri='/lsstsim/registeruser', limitdata=limitdata)
+                #if cpumax <= 0 or memmax <= 0 or podmax <= 0:
+                #    self.render('AddUser.html', failmessage="Not enough Resources. User cannot be created.", uri='', limitdata=limitdata)
+                #else:
+                self.render('AddUser.html', failmessage="", uri='/lsstsim/registeruser', limitdata=limitdata)
             except Exception as e:
                 self.render('NotFound.html', errormessage="{}".format(e))
 
@@ -351,11 +349,13 @@ class RegistrationHandler(tornado.web.RequestHandler):
     def post(self):
         try:
             username  = self.get_argument('username')
+            userclass = self.get_argument('userclass')
             namespace = username+"-ns"
             cpulimit  = self.get_argument('cpulimit')
             memlimit  = self.get_argument('memlimit')
             podlimit  = self.get_argument('podlimit')
-            CreateUser(db, username, namespace, cpulimit, memlimit, podlimit)
+
+            CreateUser(db, username, userclass, namespace, cpulimit, memlimit, podlimit)
             self.redirect('/lsstsim')
         except Exception as e:
             self.render('NotFound.html', errormessage="{}".format(e))
@@ -390,6 +390,11 @@ application = tornado.web.Application([
 ],**settings)
 
 if __name__=="__main__":
+    try:
+        kd.create_priority_class('privilaged', 10000, default="false")
+        kd.create_priority_class('common',      5000, default="false")
+    except:
+        pass
     print("server running at localhost:8888 ...")
     ("press ctrl+c to close.")
     application.listen(8888)
