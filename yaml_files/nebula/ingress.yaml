@@ -13,3 +13,7 @@ spec:
        backend:
          serviceName: resourceallocation
          servicePort: 8888
+     - path: /static
+       backend:
+         serviceName: resourceallocation
+         servicePort: 8888
