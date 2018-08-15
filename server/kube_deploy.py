@@ -45,7 +45,7 @@ def getNodeInfo(name):
         print("Exception when calling CoreV1Api->read_node: %s\n" % e)
 
 
-def create_priority_class(name, level, default="false"):
+def create_priority_class(name, level, default=False):
     try:
         config.load_kube_config()
     except:
@@ -54,7 +54,7 @@ def create_priority_class(name, level, default="false"):
     api = client.SchedulingV1beta1Api()
     pretty = 'true'
 
-    body = client.V1alpha1PriorityClass(value=level, metadata=client.V1ObjectMeta(name=name))
+    body = client.V1beta1PriorityClass(value=level, global_default=default, metadata=client.V1ObjectMeta(name=name))
 
 
     try:
