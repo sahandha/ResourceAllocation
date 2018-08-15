@@ -51,10 +51,10 @@ def create_priority_class(name, level, default="false"):
     except:
         config.load_incluster_config()
 
-    api = client.SchedulingV1alpha1Api()
+    api = client.SchedulingV1beta1Api()
     pretty = 'true'
 
-    body = client.V1alpha1PriorityClass(value=level, global_default=default, metadata=client.V1ObjectMeta(name=name))
+    body = client.V1alpha1PriorityClass(value=level, metadata=client.V1ObjectMeta(name=name))
 
 
     try:
