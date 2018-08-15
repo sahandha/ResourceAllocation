@@ -17,7 +17,7 @@ spec:
           image: sahandha/resourceallocation
           imagePullPolicy: Always
           command: ["/bin/sh"]
-          args: ["-c","cp -r /external/server /external/shared; python /external/shared/server/server.py"]
+          args: ["-c","python /external/server/server.py"]
           ports:
             - containerPort: 27017
             - containerPort: 8888 
