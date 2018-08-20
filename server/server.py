@@ -93,7 +93,7 @@ def activateuser(db, username):
     cpu = data["cpulimit"]
     mem = data["memlimit"]
     pod = data["podlimit"]
-    class = data["userclass"]
+    priorityclass = data["userclass"]
     name = namespace
 
     systemdata = yield getSystemState(db)
@@ -105,7 +105,7 @@ def activateuser(db, username):
     if (cpufree < float(cpu)) or (cpufree < float(cpu)) or (cpufree < float(cpu)):
         return "Error! Not enough resources available"
 
-    kd.update_quota(name, namespace, maxmem=mem+'Mi', maxcpu=cpu+'m', maxpods=pod, priorityclass=class)
+    kd.update_quota(name, namespace, maxmem=mem+'Mi', maxcpu=cpu+'m', maxpods=pod, priorityclass=priorityclass)
     expirationdate = datetime.now()+timedelta(hours=1./30.)
     db.users.update_one(
     {'username':username},
@@ -166,7 +166,7 @@ def deleteJob(db, user, job):
     namespace = doc[0]["namespace"]
 
     if job == "All":
-        kd.namespace_cleanup(namespace, priorityclass=class)
+        kd.namespace_cleanup(namespace) #, priorityclass=class)
         jobs = []
     else:
         kd.delete_deployment(namespace, job)

@@ -27,23 +27,7 @@ spec:
           resources:
             requests:
               cpu: 100m
-        - name: mongodb
-          image: sahandha/mongodb
-          imagePullPolicy: Always
-          command: ["mongod"]
-          ports:
-            - containerPort: 27017
-            - containerPort: 8888
-          volumeMounts:
-            - mountPath: /data/db
-              name: mongodb-volume
-          resources:
-            requests:
-              cpu: 100m
       volumes:
         - name: volume
           persistentVolumeClaim:
             claimName: volume
-        - name: mongodb-volume
-          persistentVolumeClaim:
-            claimName: mongodb-volume
