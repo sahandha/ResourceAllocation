@@ -145,7 +145,8 @@ def create_quota(namespace, maxmem="0Mi", maxcpu="0m", maxpods="0",priorityclass
                 kind="ResourceQuota",
                 metadata=client.V1ObjectMeta(name=namespace, namespace=namespace),
                 spec=client.V1ResourceQuotaSpec(
-                    hard={"cpu":maxcpu, "memory":maxmem, "pods":maxpods}
+                    hard={"cpu":maxcpu, "memory":maxmem, "pods":maxpods},
+                    scope_selector=client.V1ScopeSelector(match_expressions=[client.V1ScopedResourceSelectorRequirement(operator="In",name="PriorityClass",values=[priorityclass])])
                 )
             )
     pretty = 'true'
