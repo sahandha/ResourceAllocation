@@ -392,8 +392,8 @@ application = tornado.web.Application([
 
 if __name__=="__main__":
     try:
-        kd.create_priority_class('privilaged', 1000,)
-        kd.create_priority_class('common',      500, default=True)
+        #kd.create_priority_class('privilaged', 1000,)
+        #kd.create_priority_class('common',      500, default=True)
     except:
         pass
     print("server running at localhost:8888 ...")
