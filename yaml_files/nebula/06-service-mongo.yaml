@@ -1,0 +1,11 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: mongodb
+  namespace: resourceallocation
+spec:
+  ports:
+    - port: 27017
+      targetPort: 27017
+  selector:
+    component: mongodb

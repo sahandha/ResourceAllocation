@@ -6,7 +6,7 @@ metadata:
 spec:
   replicas: 1
   selector:
-    component: resourceallocation
+    component: resourceallocation 
   template:
     metadata:
       labels:
@@ -17,26 +17,13 @@ spec:
           image: sahandha/resourceallocation
           imagePullPolicy: Always
           command: ["/bin/sh"]
-          args: ["-c","cp -r /external/server /external/shared; python /external/shared/server/server.py"]
+          args: ["-c","python /external/server/server.py"]
           ports:
             - containerPort: 27017
-            - containerPort: 8888
+            - containerPort: 8888 
           volumeMounts:
             - mountPath: /external/shared
               name: volume
-          resources:
-            requests:
-              cpu: 100m
-        - name: mongodb
-          image: sahandha/mongodb
-          imagePullPolicy: Always
-          command: ["mongod"]
-          ports:
-            - containerPort: 27017
-            - containerPort: 8888
-          volumeMounts:
-            - mountPath: /external/shared
-              name: mongodb-volume
           resources:
             requests:
               cpu: 100m
@@ -44,6 +31,3 @@ spec:
         - name: volume
           persistentVolumeClaim:
             claimName: volume
-        - name: mongodb-volume
-          persistentVolumeClaim:
-            claimName: mongodb-volume

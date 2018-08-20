@@ -1,0 +1,38 @@
+kind: ReplicationController
+apiVersion: v1
+metadata:
+  name: mongodb
+  namespace: resourceallocation
+spec:
+  replicas: 1
+  selector:
+    component: mongodb
+  template:
+    metadata:
+      labels:
+        component: mongodb
+    spec:
+      containers:
+        - name: mongodb
+          image: mongo
+          imagePullPolicy: Always
+          command: 
+            - "numactl"
+            - "--interleave=all"
+            - "mongod"
+            - "--wiredTigerCacheSizeGB"
+            - "0.25"
+            - "--bind_ip"
+            - "0.0.0.0"
+          ports:
+            - containerPort: 27017
+          volumeMounts:
+            - mountPath: /data/db
+              name: mongodb-volume
+          resources:
+            requests:
+              cpu: 100m
+      volumes:
+        - name: mongodb-volume
+          persistentVolumeClaim:
+            claimName: mongodb-volume

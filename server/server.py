@@ -21,8 +21,7 @@ __USERS__ = os.path.join(os.path.dirname(__file__),"static/users/")
 __TotalCPU__ = 3000
 __TotalMem__ = 5000
 
-
-db = motor.motor_tornado.MotorClient().ResourceAllocation
+db = motor.motor_tornado.MotorClient("mongodb",27017).ResourceAllocation
 
 @gen.coroutine
 def getHardInquiry(db):
