@@ -33,11 +33,6 @@ def getHardInquiry(db):
 @gen.coroutine
 def getSystemState(db):
 
-    #kd.create_priority_class("SpecialUser",1000, default="false")
-    #kd.create_priority_class("CommonUser",500, default="true")
-    #pc = kd.list_priority_class()
-    #print(pc)
-
     def cpuReader(str):
         if str.count("m")==0:
             return 1000*float(str)
@@ -106,7 +101,7 @@ def activateuser(db, username):
     if (cpufree < float(cpu)) or (cpufree < float(cpu)) or (cpufree < float(cpu)):
         return "Error! Not enough resources available"
 
-    kd.update_quota(name, namespace, maxmem=mem+'Mi', maxcpu=cpu+'m', maxpods=pod, priorityclass=priorityclass)
+    kd.update_quota(name, namespace, maxmem=mem+'Mi', maxcpu=cpu+'m', maxpods=pod)
     expirationdate = datetime.now()+timedelta(hours=1./30.)
     db.users.update_one(
     {'username':username},
@@ -167,7 +162,7 @@ def deleteJob(db, user, job):
     namespace = doc[0]["namespace"]
 
     if job == "All":
-        kd.namespace_cleanup(namespace) #, priorityclass=class)
+        kd.namespace_cleanup(namespace)
         jobs = []
     else:
         kd.delete_deployment(namespace, job)
@@ -392,11 +387,6 @@ application = tornado.web.Application([
 ],**settings)
 
 if __name__=="__main__":
-    try:
-        kd.create_priority_class('privilaged', 1000,)
-        kd.create_priority_class('common',     500, default=True)
-    except:
-        pass
     print("server running at localhost:8888 ...")
     ("press ctrl+c to close.")
     application.listen(8888)
