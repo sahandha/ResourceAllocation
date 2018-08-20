@@ -82,9 +82,7 @@ def CreateUser(db, username, userclass, namespace, cpulimit, memlimit, podlimit)
     # Create namespace
 
     kd.create_namespace(namespace)
-    print("namespace has been created")
     kd.create_quota(namespace)
-    print("quota has been created")
 
 
 @gen.coroutine
