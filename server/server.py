@@ -82,18 +82,19 @@ def CreateUser(db, username, userclass, namespace, cpulimit, memlimit, podlimit)
 
     # Create namespace
     kd.create_namespace(namespace)
-    kd.create_quota(namespace)
+    kd.create_quota(namespace,priorityclass=userclass)
 
 
 @gen.coroutine
 def activateuser(db, username):
-    doc = yield db.users.find({"username":username},{"_id": 0 ,"namespace": 1, "cpulimit": 1, "memlimit": 1, "podlimit": 1}).to_list(length=1)
+    doc = yield db.users.find({"username":username},{"_id": 0 ,"namespace": 1, "cpulimit": 1, "memlimit": 1, "podlimit": 1,"userclass":1}).to_list(length=1)
     data = doc[0]
 
     namespace = data["namespace"]
     cpu = data["cpulimit"]
     mem = data["memlimit"]
     pod = data["podlimit"]
+    class = data["userclass"]
     name = namespace
 
     systemdata = yield getSystemState(db)
@@ -105,7 +106,7 @@ def activateuser(db, username):
     if (cpufree < float(cpu)) or (cpufree < float(cpu)) or (cpufree < float(cpu)):
         return "Error! Not enough resources available"
 
-    kd.update_quota(name, namespace, maxmem=mem+'Mi', maxcpu=cpu+'m', maxpods=pod)
+    kd.update_quota(name, namespace, maxmem=mem+'Mi', maxcpu=cpu+'m', maxpods=pod, priorityclass=class)
     expirationdate = datetime.now()+timedelta(hours=1./30.)
     db.users.update_one(
     {'username':username},
@@ -124,6 +125,7 @@ def deactivateuser(db, username):
     data = doc[0]
     namespace = data["namespace"]
     name = namespace
+
 
     deleteJob(db, username, "All")
 
@@ -161,11 +163,11 @@ def deleteUsers(db, usernames):
 
 @gen.coroutine
 def deleteJob(db, user, job):
-    doc = yield db.users.find({"username":user},{"_id": 0 ,"username": 1, "namespace": 1, "jobs": 1 }).to_list(length=1)
+    doc = yield db.users.find({"username":user},{"_id": 0 ,"username": 1, "namespace": 1, "jobs": 1, "userclass": 1 }).to_list(length=1)
     namespace = doc[0]["namespace"]
 
     if job == "All":
-        kd.namespace_cleanup(namespace)
+        kd.namespace_cleanup(namespace, priorityclass=class)
         jobs = []
     else:
         kd.delete_deployment(namespace, job)

@@ -35,7 +35,7 @@ spec:
             - containerPort: 27017
             - containerPort: 8888 
           volumeMounts:
-            - mountPath: /external/shared
+            - mountPath: /data/db
               name: mongodb-volume
           resources:
             requests:
