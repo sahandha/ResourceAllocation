@@ -112,7 +112,7 @@ def activateuser(db, username):
         'expirationdate': expirationdate
         }
     })
-    kd.create_cronjob(namespace,dbhost)
+    kd.create_cronjob(username,namespace,dbhost)
     return "success"
 
 @gen.coroutine
@@ -178,7 +178,6 @@ def deleteJob(db, user, job):
         "jobs":jobs
         }
     })
-
 
 @gen.coroutine
 def getUserData(db):
