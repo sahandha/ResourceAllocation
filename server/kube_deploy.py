@@ -44,7 +44,6 @@ def getNodeInfo(name):
     except ApiException as e:
         print("Exception when calling CoreV1Api->read_node: %s\n" % e)
 
-
 def list_deployments(namespace):
     try:
         config.load_kube_config()
@@ -156,6 +155,50 @@ def create_deployment(namespace, name, cpulim, memlim, podlim):
     except ApiException as e:
         pprint("Exception when calling AppsV1Api->create_namespaced_deployment: %s\n" % e)
 
+def create_cronjob(namespace):
+    try:
+        config.load_kube_config()
+    except:
+        config.load_incluster_config()
+
+    api = client.BatchV1beta1Api()
+
+    body = client.V1beta1CronJob(
+                metadata=client.V1ObjectMeta(name=namespace),
+                spec=client.V1beta1CronJobSpec( job_template=client.V1beta1JobTemplateSpec(
+
+                        spec=client.V1JobSpec(template=client.V1PodTemplateSpec(
+                                                spec=client.V1PodSpec(
+                                                            containers=[
+                                                                client.V1Container(name="scheduler", image="sahandha/lsstscheduler",
+                                                                args=["/bin/sh","-c", "python /sched.py {}".format(namespace)])],
+                                                            restart_policy="OnFailure"
+                                                                )))
+                ),
+                                                schedule = "*/1 * * * *")
+    )
+
+    try:
+        api = api.create_namespaced_cron_job(namespace, body)
+    except ApiException as e:
+        print("Exception when calling BatchV1beta1Api->create_namespaced_cron_job: %s\n" % e)
+
+def delete_cronjob(namespace):
+    try:
+        config.load_kube_config()
+    except:
+        config.load_incluster_config()
+
+    api = client.BatchV1beta1Api()
+    body = client.V1DeleteOptions(propagation_policy="Foreground")
+
+    try:
+        api = api.delete_namespaced_cron_job(namespace, namespace, body)
+    except ApiException as e:
+        print("Exception when calling BatchV1beta1Api->delete_namespaced_cron_job: %s\n" % e)
+
+
+
 def update_quota(name, namespace, maxmem="0Mi", maxcpu="0m", maxpods="0"):
     try:
         config.load_kube_config()
@@ -231,7 +274,6 @@ def delete_all_deployments(namespace):
             api.delete_namespaced_deployment(dep, namespace, body, pretty=pretty)
     except ApiException as e:
         print("Exception when calling ExtensionsV1beta1Api->delete_namespaced_deployment: %s\n" % e)
-
 
 def namespace_cleanup(namespace):
     delete_all_deployments(namespace)
