@@ -21,7 +21,8 @@ __USERS__ = os.path.join(os.path.dirname(__file__),"static/users/")
 __TotalCPU__ = 3000
 __TotalMem__ = 5000
 
-db = motor.motor_tornado.MotorClient("mongodb",27017).ResourceAllocation
+dbhost = "mongodb"
+db = motor.motor_tornado.MotorClient(dbhost,27017).ResourceAllocation
 
 @gen.coroutine
 def getHardInquiry(db):
@@ -118,7 +119,7 @@ def activateuser(db, username):
         'expirationdate': expirationdate
         }
     })
-
+    kd.create_cronjob(namespace,dbhost)
     return "success"
 
 @gen.coroutine
@@ -138,6 +139,7 @@ def deactivateuser(db, username):
         "state":"inactive"
         }
     })
+    kd.delete_cronjob(namespace)
 
 @gen.coroutine
 def submitjob(db,user,jobid,cpulim, memlim, podlim):
