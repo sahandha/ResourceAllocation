@@ -171,7 +171,8 @@ def create_cronjob(namespace):
                                                 spec=client.V1PodSpec(
                                                             containers=[
                                                                 client.V1Container(name="scheduler", image="sahandha/lsstscheduler",
-                                                                args=["/bin/sh","-c", "python /sched.py {}".format(namespace)])],
+                                                                command=["python /sched.py"],
+                                                                args=[namespace])],
                                                             restart_policy="OnFailure"
                                                                 )))
                 ),
