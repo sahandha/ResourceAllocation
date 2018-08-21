@@ -6,7 +6,7 @@ import os
 from shutil import rmtree
 import motor.motor_tornado
 from tornado import gen
-import kube_deploy as kd
+import kube_deploy_nebula as kd
 from datetime import datetime, timedelta
 
 

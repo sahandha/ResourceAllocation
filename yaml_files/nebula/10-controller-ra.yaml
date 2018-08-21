@@ -6,7 +6,7 @@ metadata:
 spec:
   replicas: 1
   selector:
-    component: resourceallocation 
+    component: resourceallocation
   template:
     metadata:
       labels:
@@ -17,10 +17,10 @@ spec:
           image: sahandha/resourceallocation
           imagePullPolicy: Always
           command: ["/bin/sh"]
-          args: ["-c","python /external/server/server.py"]
+          args: ["-c","python /external/server/server_nebula.py"]
           ports:
             - containerPort: 27017
-            - containerPort: 8888 
+            - containerPort: 8888
           volumeMounts:
             - mountPath: /external/shared
               name: volume

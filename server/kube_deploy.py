@@ -155,7 +155,7 @@ def create_deployment(namespace, name, cpulim, memlim, podlim):
     except ApiException as e:
         pprint("Exception when calling AppsV1Api->create_namespaced_deployment: %s\n" % e)
 
-def create_cronjob(namespace, dbhost):
+def create_cronjob(username, namespace, dbhost):
     try:
         config.load_kube_config()
     except:
@@ -171,7 +171,7 @@ def create_cronjob(namespace, dbhost):
                                                 spec=client.V1PodSpec(
                                                             containers=[
                                                                 client.V1Container(name="scheduler", image="sahandha/lsstscheduler",
-                                                                args=["/bin/bash","-c","python /sched.py {} {};".format(namespace, dbhost)],
+                                                                args=["/bin/bash","-c","python /sched.py {} {} {};".format(username, namespace, dbhost)],
                                                                 resources=client.V1ResourceRequirements(
                                                                           requests={'memory': "200Mi", 'cpu': "100m"})
                                                                 )],

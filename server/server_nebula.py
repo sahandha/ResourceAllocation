@@ -119,7 +119,7 @@ def activateuser(db, username):
         'expirationdate': expirationdate
         }
     })
-    kd.create_cronjob(namespace,dbhost)
+    kd.create_cronjob(username,namespace,dbhost)
     return "success"
 
 @gen.coroutine
