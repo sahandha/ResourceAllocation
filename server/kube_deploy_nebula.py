@@ -137,7 +137,7 @@ def create_quota(namespace, maxmem="0Mi", maxcpu="0m", maxpods="0",priorityclass
     except:
         config.load_incluster_config()
 
-    api = client.SchedulingV1beta1Api()
+    api = client.CoreV1Api()
 
     body = client.V1ResourceQuota(
                 api_version='v1',
@@ -241,7 +241,7 @@ def update_quota(name, namespace, maxmem="0Mi", maxcpu="0m", maxpods="0", priori
     except:
         config.load_incluster_config()
 
-    api = client.SchedulingV1beta1Api()
+    api = client.CoreV1Api()
     name = namespace
     body = client.V1ResourceQuota(
                 api_version='v1',
