@@ -1,0 +1,29 @@
+apiVersion: apiserver.k8s.io/v1alpha1
+kind: AdmissionConfiguration
+plugins:
+- name: "CommonResourceQuota"
+  configuration:
+    apiVersion: resourcequota.admission.k8s.io/v1alpha1
+    kind: Configuration
+    limitedResources:
+    - resource: pods
+    matchScopes:
+    - operator : In
+      scopeName: PriorityClass
+      values: ["common"]
+
+--
+
+apiVersion: apiserver.k8s.io/v1alpha1
+kind: AdmissionConfiguration
+plugins:
+- name: "PrivilagedResourceQuota"
+  configuration:
+    apiVersion: resourcequota.admission.k8s.io/v1alpha1
+    kind: Configuration
+    limitedResources:
+    - resource: pods
+    matchScopes:
+    - operator : In
+      scopeName: PriorityClass
+      values: ["privilaged"]
