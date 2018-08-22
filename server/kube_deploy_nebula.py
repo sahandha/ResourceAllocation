@@ -44,7 +44,6 @@ def getNodeInfo(name):
     except ApiException as e:
         print("Exception when calling CoreV1Api->read_node: %s\n" % e)
 
-
 def create_priority_class(name, level, default=False):
     try:
         config.load_kube_config()
@@ -145,7 +144,10 @@ def create_quota(namespace, maxmem="0Mi", maxcpu="0m", maxpods="0",priorityclass
                 kind="ResourceQuota",
                 metadata=client.V1ObjectMeta(name=namespace, namespace=namespace),
                 spec=client.V1ResourceQuotaSpec(
-                    hard={"cpu":maxcpu, "memory":maxmem, "pods":maxpods}
+                    hard={"cpu":maxcpu, "memory":maxmem, "pods":maxpods},
+                    scope_selector=client.V1ScopeSelector(match_expressions=[
+                        client.V1ScopedResourceSelectorRequirement(operatro="In",scope_name="PriorityClass", value=["common"])
+                    ])
                 )
             )
     pretty = 'true'
@@ -246,7 +248,10 @@ def update_quota(name, namespace, maxmem="0Mi", maxcpu="0m", maxpods="0", priori
                 kind="ResourceQuota",
                 metadata=client.V1ObjectMeta(name=namespace, namespace=namespace),
                 spec=client.V1ResourceQuotaSpec(
-                    hard={"cpu":maxcpu, "memory":maxmem, "pods":maxpods}
+                    hard={"cpu":maxcpu, "memory":maxmem, "pods":maxpods},
+                    scope_selector=client.V1ScopeSelector(match_expressions=[
+                        client.V1ScopedResourceSelectorRequirement(operatro="In",scope_name="PriorityClass", value=["common"])
+                    ])
                 )
             )
     pretty = 'true'
@@ -308,7 +313,6 @@ def delete_all_deployments(namespace):
             api.delete_namespaced_deployment(dep, namespace, body, pretty=pretty)
     except ApiException as e:
         print("Exception when calling ExtensionsV1beta1Api->delete_namespaced_deployment: %s\n" % e)
-
 
 def namespace_cleanup(namespace, priorityclass="common"):
     delete_all_deployments(namespace)

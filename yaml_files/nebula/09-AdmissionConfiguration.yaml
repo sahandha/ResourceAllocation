@@ -12,7 +12,7 @@ plugins:
       scopeName: PriorityClass
       values: ["common"]
 
---
+---
 
 apiVersion: apiserver.k8s.io/v1alpha1
 kind: AdmissionConfiguration
