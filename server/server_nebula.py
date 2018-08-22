@@ -142,12 +142,15 @@ def deactivateuser(db, username):
     kd.delete_cronjob(namespace)
 
 @gen.coroutine
-def submitjob(db,user,jobid,cpulim, memlim, podlim):
+def submitjob(db,user,jobid,cpulim, memlim, podlim, priority="default"):
     doc = yield db.users.find({'username':user}).to_list(length=1)
     namespace=doc[0]["namespace"]
     jobs=doc[0]["jobs"]
     jobs.append({"jobid":jobid,"cpureq":cpulim,"memreq":memlim,"podreq":podlim})
-    priorityclass=doc[0]["userclass"]
+    if priority == "default":
+        priorityclass=doc[0]["userclass"]
+    else:
+        priotiryclass=priority
     db.users.update_one(
     {'username':user},
     {
