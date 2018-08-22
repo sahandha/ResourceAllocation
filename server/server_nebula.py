@@ -147,7 +147,7 @@ def submitjob(db,user,jobid,cpulim, memlim, podlim):
     namespace=doc[0]["namespace"]
     jobs=doc[0]["jobs"]
     jobs.append({"jobid":jobid,"cpureq":cpulim,"memreq":memlim,"podreq":podlim})
-
+    priorityclass=doc[0]["userclass"]
     db.users.update_one(
     {'username':user},
     {
@@ -155,7 +155,7 @@ def submitjob(db,user,jobid,cpulim, memlim, podlim):
         "jobs":jobs
         }
     })
-    kd.create_deployment(namespace, jobid, cpulim+"m", memlim+"Mi", podlim)
+    kd.create_deployment(namespace, jobid, cpulim+"m", memlim+"Mi", podlim, priorityclass)
 
 @gen.coroutine
 def deleteUsers(db, usernames):

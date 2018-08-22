@@ -157,7 +157,7 @@ def create_quota(namespace, maxmem="0Mi", maxcpu="0m", maxpods="0",priorityclass
     except ApiException as e:
         print("Exception when calling CoreV1Api->create_namespaced_limit_range: %s\n" % e)
 
-def create_deployment(namespace, name, cpulim, memlim, podlim):
+def create_deployment(namespace, name, cpulim, memlim, podlim,priorityclass):
     try:
         config.load_kube_config()
     except:
@@ -179,7 +179,7 @@ def create_deployment(namespace, name, cpulim, memlim, podlim):
                 selector=client.V1LabelSelector(match_labels={"app":name}),
                 template = client.V1PodTemplateSpec(
                        metadata=client.V1ObjectMeta(name=name, namespace=namespace,labels={"app": name}),
-                       spec=client.V1PodSpec(containers=[container])
+                       spec=client.V1PodSpec(containers=[container],priority_class_name=,priorityclass)
                        )
             )
         )
