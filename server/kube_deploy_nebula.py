@@ -146,7 +146,7 @@ def create_quota(namespace, maxmem="0Mi", maxcpu="0m", maxpods="0",priorityclass
                 spec=client.V1ResourceQuotaSpec(
                     hard={"cpu":maxcpu, "memory":maxmem, "pods":maxpods},
                     scope_selector=client.V1ScopeSelector(match_expressions=[
-                        client.V1ScopedResourceSelectorRequirement(operatro="In",scope_name="PriorityClass", value=["common"])
+                        client.V1ScopedResourceSelectorRequirement(operatro="In",scope_name="PriorityClass", value=[priorityclass])
                     ])
                 )
             )
@@ -250,7 +250,7 @@ def update_quota(name, namespace, maxmem="0Mi", maxcpu="0m", maxpods="0", priori
                 spec=client.V1ResourceQuotaSpec(
                     hard={"cpu":maxcpu, "memory":maxmem, "pods":maxpods},
                     scope_selector=client.V1ScopeSelector(match_expressions=[
-                        client.V1ScopedResourceSelectorRequirement(operatro="In",scope_name="PriorityClass", value=["common"])
+                        client.V1ScopedResourceSelectorRequirement(operatro="In",scope_name="PriorityClass", value=[priorityclass])
                     ])
                 )
             )
