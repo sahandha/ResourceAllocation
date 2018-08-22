@@ -179,7 +179,7 @@ def create_deployment(namespace, name, cpulim, memlim, podlim,priorityclass):
                 selector=client.V1LabelSelector(match_labels={"app":name}),
                 template = client.V1PodTemplateSpec(
                        metadata=client.V1ObjectMeta(name=name, namespace=namespace,labels={"app": name}),
-                       spec=client.V1PodSpec(containers=[container],priority_class_name=,priorityclass)
+                       spec=client.V1PodSpec(containers=[container],priority_class_name=priorityclass)
                        )
             )
         )
