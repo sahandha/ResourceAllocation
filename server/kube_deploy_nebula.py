@@ -241,7 +241,7 @@ def update_quota(name, namespace, maxmem="0Mi", maxcpu="0m", maxpods="0", priori
     except:
         config.load_incluster_config()
 
-    api = client.CoreV1Api()
+    api = client.SchedulingV1beta1Api()
     name = namespace
     body = client.V1ResourceQuota(
                 api_version='v1',
