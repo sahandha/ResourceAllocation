@@ -88,9 +88,8 @@ def CreateUser(db, username, userclass, namespace, cpulimit, memlimit, podlimit,
     kd.create_quota(namespace,priorityclass=userclass)
     print("quota has been created")
 
-
 @gen.coroutine
-def activateuser(db, username,):
+def activateuser(db, username):
     doc = yield db.users.find({"username":username},{"_id": 0 ,"namespace": 1, "cpulimit": 1, "memlimit": 1, "podlimit": 1,"userclass":1,"timeactive":1}).to_list(length=1)
     data = doc[0]
 
@@ -121,7 +120,7 @@ def activateuser(db, username,):
         'expirationdate': expirationdate
         }
     })
-    kd.create_cronjob(username,namespace,dbhost,timeactive)
+    kd.create_cronjob(username,namespace,dbhost)
     return "success"
 
 @gen.coroutine
@@ -191,7 +190,6 @@ def deleteJob(db, user, job):
         }
     })
 
-
 @gen.coroutine
 def getUserData(db):
     try:
@@ -209,8 +207,6 @@ def getJobData(db, user):
     except:
         jobdata = []
     return jobdata
-
-
 
 class MainHandler(tornado.web.RequestHandler):
     @gen.coroutine
