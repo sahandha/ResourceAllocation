@@ -77,7 +77,7 @@ def CreateUser(db, username, userclass, namespace, cpulimit, memlimit, podlimit,
     'state':"inactive",
     'activationrequested':'false',
     'jobs':[],
-    'expirationdate': datetime.now()+timedelta(hours=1000),
+    'expirationdate': datetime.now()+timedelta(minutes=int(timeactive)),
     'timeactive': timeactive
     })
 
@@ -85,13 +85,13 @@ def CreateUser(db, username, userclass, namespace, cpulimit, memlimit, podlimit,
 
     kd.create_namespace(namespace)
     print("namespace has been created")
-    kd.create_quota(namespace)
+    kd.create_quota(namespace,priorityclass=userclass)
     print("quota has been created")
 
 
 @gen.coroutine
-def activateuser(db, username, timeactive):
-    doc = yield db.users.find({"username":username},{"_id": 0 ,"namespace": 1, "cpulimit": 1, "memlimit": 1, "podlimit": 1,"userclass":1}).to_list(length=1)
+def activateuser(db, username,):
+    doc = yield db.users.find({"username":username},{"_id": 0 ,"namespace": 1, "cpulimit": 1, "memlimit": 1, "podlimit": 1,"userclass":1,"timeactive":1}).to_list(length=1)
     data = doc[0]
 
     namespace = data["namespace"]
@@ -99,6 +99,7 @@ def activateuser(db, username, timeactive):
     mem = data["memlimit"]
     pod = data["podlimit"]
     priorityclass = data["userclass"]
+    timeactive = data["timeactive"]
     name = namespace
 
     systemdata = yield getSystemState(db)
@@ -111,7 +112,7 @@ def activateuser(db, username, timeactive):
         return "Error! Not enough resources available"
 
     kd.update_quota(name, namespace, maxmem=mem+'Mi', maxcpu=cpu+'m', maxpods=pod, priorityclass=priorityclass)
-    expirationdate = datetime.now()+timedelta(hours=1./30.)
+    expirationdate = datetime.now()+timedelta(minutes=int(timeactive))
     db.users.update_one(
     {'username':username},
     {
