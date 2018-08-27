@@ -65,7 +65,7 @@ def getSystemState(db):
         systemdata = []
     return systemdata
 
-def CreateUser(db, username, userclass, namespace, cpulimit, memlimit, podlimit):
+def CreateUser(db, username, userclass, namespace, cpulimit, memlimit, podlimit, timeactive):
     # insert user info into database
     db.users.insert_one({
     'username':username,
@@ -77,7 +77,8 @@ def CreateUser(db, username, userclass, namespace, cpulimit, memlimit, podlimit)
     'state':"inactive",
     'activationrequested':'false',
     'jobs':[],
-    'expirationdate': datetime.now()+timedelta(hours=1000)
+    'expirationdate': datetime.now()+timedelta(hours=1000),
+    'timeactive': timeactive
     })
 
     # Create namespace
@@ -89,7 +90,7 @@ def CreateUser(db, username, userclass, namespace, cpulimit, memlimit, podlimit)
 
 
 @gen.coroutine
-def activateuser(db, username):
+def activateuser(db, username, timeactive):
     doc = yield db.users.find({"username":username},{"_id": 0 ,"namespace": 1, "cpulimit": 1, "memlimit": 1, "podlimit": 1,"userclass":1}).to_list(length=1)
     data = doc[0]
 
@@ -119,7 +120,7 @@ def activateuser(db, username):
         'expirationdate': expirationdate
         }
     })
-    kd.create_cronjob(username,namespace,dbhost)
+    kd.create_cronjob(username,namespace,dbhost,timeactive)
     return "success"
 
 @gen.coroutine
@@ -357,14 +358,15 @@ class RegistrationHandler(tornado.web.RequestHandler):
 
     def post(self):
         try:
-            username  = self.get_argument('username')
-            userclass = self.get_argument('userclass')
-            namespace = username+"-ns"
-            cpulimit  = self.get_argument('cpulimit')
-            memlimit  = self.get_argument('memlimit')
-            podlimit  = self.get_argument('podlimit')
+            username   = self.get_argument('username')
+            userclass  = self.get_argument('userclass')
+            timeactive = self.get_argument('timeactive')
+            namespace  = username+"-ns"
+            cpulimit   = self.get_argument('cpulimit')
+            memlimit   = self.get_argument('memlimit')
+            podlimit   = self.get_argument('podlimit')
 
-            CreateUser(db, username, userclass, namespace, cpulimit, memlimit, podlimit)
+            CreateUser(db, username, userclass, namespace, cpulimit, memlimit, podlimit, timeactive)
             self.redirect('/lsstsim')
         except Exception as e:
             self.render('NotFound.html', errormessage="{}".format(e))
