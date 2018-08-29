@@ -139,11 +139,6 @@ def create_quota(namespace, maxmem="0Mi", maxcpu="0m", maxpods="0",priorityclass
 
     api = client.CoreV1Api()
 
-    if priorityclass=="common":
-        priorityclassname="CommonResourceQuota"
-    else:
-        priorityclassname="PrivilagedResourceQuota"
-
     body = client.V1ResourceQuota(
                 api_version='v1',
                 kind="ResourceQuota",
@@ -151,7 +146,7 @@ def create_quota(namespace, maxmem="0Mi", maxcpu="0m", maxpods="0",priorityclass
                 spec=client.V1ResourceQuotaSpec(
                     hard={"cpu":maxcpu, "memory":maxmem, "pods":maxpods},
                     scope_selector=client.V1ScopeSelector(match_expressions=[
-                        client.V1ScopedResourceSelectorRequirement(operator="In",scope_name=priorityclassname, values=[priorityclass])
+                        client.V1ScopedResourceSelectorRequirement(operator="In",scope_name="ResourceQuota", values=[priorityclass])
                     ])
                 )
             )
