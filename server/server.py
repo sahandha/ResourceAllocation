@@ -6,7 +6,7 @@ import os
 from shutil import rmtree
 import motor.motor_tornado
 from tornado import gen
-import kube_deploy_nebula as kd
+import kube_deploy as kd
 from datetime import datetime, timedelta
 
 
@@ -60,7 +60,7 @@ def getSystemState(db):
         systemdata = []
     return systemdata
 
-def CreateUser(db, username, userclass, namespace, cpulimit, memlimit, podlimit):
+def CreateUser(db, username, userclass, namespace, cpulimit, memlimit, podlimit, timeactive):
     # insert user info into database
     db.users.insert_one({
     'username':username,
@@ -72,18 +72,20 @@ def CreateUser(db, username, userclass, namespace, cpulimit, memlimit, podlimit)
     'state':"inactive",
     'activationrequested':'false',
     'jobs':[],
-    'expirationdate': datetime.now()+timedelta(hours=1000)
+    'expirationdate': datetime.now()+timedelta(minutes=int(timeactive)),
+    'timeactive': timeactive
     })
 
     # Create namespace
 
     kd.create_namespace(namespace)
-    kd.create_quota(namespace)
-
+    print("namespace has been created")
+    kd.create_quota(namespace,priorityclass=userclass)
+    print("quota has been created")
 
 @gen.coroutine
 def activateuser(db, username):
-    doc = yield db.users.find({"username":username},{"_id": 0 ,"namespace": 1, "cpulimit": 1, "memlimit": 1, "podlimit": 1,"userclass":1}).to_list(length=1)
+    doc = yield db.users.find({"username":username},{"_id": 0 ,"namespace": 1, "cpulimit": 1, "memlimit": 1, "podlimit": 1,"userclass":1,"timeactive":1}).to_list(length=1)
     data = doc[0]
 
     namespace = data["namespace"]
@@ -91,6 +93,7 @@ def activateuser(db, username):
     mem = data["memlimit"]
     pod = data["podlimit"]
     priorityclass = data["userclass"]
+    timeactive = data["timeactive"]
     name = namespace
 
     systemdata = yield getSystemState(db)
@@ -102,8 +105,8 @@ def activateuser(db, username):
     if (cpufree < float(cpu)) or (cpufree < float(cpu)) or (cpufree < float(cpu)):
         return "Error! Not enough resources available"
 
-    kd.update_quota(name, namespace, maxmem=mem+'Mi', maxcpu=cpu+'m', maxpods=pod)
-    expirationdate = datetime.now()+timedelta(hours=1./30.)
+    kd.update_quota(name, namespace, maxmem=mem+'Mi', maxcpu=cpu+'m', maxpods=pod, priorityclass=priorityclass)
+    expirationdate = datetime.now()+timedelta(minutes=int(timeactive))
     db.users.update_one(
     {'username':username},
     {
@@ -135,12 +138,15 @@ def deactivateuser(db, username):
     kd.delete_cronjob(namespace)
 
 @gen.coroutine
-def submitjob(db,user,jobid,cpulim, memlim, podlim):
+def submitjob(db,user,jobid,cpulim, memlim, podlim, priority="default"):
     doc = yield db.users.find({'username':user}).to_list(length=1)
     namespace=doc[0]["namespace"]
     jobs=doc[0]["jobs"]
     jobs.append({"jobid":jobid,"cpureq":cpulim,"memreq":memlim,"podreq":podlim})
-
+    if priority == "default":
+        priorityclass=doc[0]["userclass"]
+    else:
+        priotiryclass=priority
     db.users.update_one(
     {'username':user},
     {
@@ -148,7 +154,7 @@ def submitjob(db,user,jobid,cpulim, memlim, podlim):
         "jobs":jobs
         }
     })
-    kd.create_deployment(namespace, jobid, cpulim+"m", memlim+"Mi", podlim)
+    kd.create_deployment(namespace, jobid, cpulim+"m", memlim+"Mi", podlim, priorityclass)
 
 @gen.coroutine
 def deleteUsers(db, usernames):
@@ -164,7 +170,7 @@ def deleteJob(db, user, job):
     namespace = doc[0]["namespace"]
 
     if job == "All":
-        kd.namespace_cleanup(namespace)
+        kd.namespace_cleanup(namespace) #, priorityclass=class)
         jobs = []
     else:
         kd.delete_deployment(namespace, job)
@@ -196,8 +202,6 @@ def getJobData(db, user):
     except:
         jobdata = []
     return jobdata
-
-
 
 class MainHandler(tornado.web.RequestHandler):
     @gen.coroutine
@@ -346,14 +350,15 @@ class RegistrationHandler(tornado.web.RequestHandler):
 
     def post(self):
         try:
-            username  = self.get_argument('username')
-            userclass = self.get_argument('userclass')
-            namespace = username+"-ns"
-            cpulimit  = self.get_argument('cpulimit')
-            memlimit  = self.get_argument('memlimit')
-            podlimit  = self.get_argument('podlimit')
+            username   = self.get_argument('username')
+            userclass  = self.get_argument('userclass')
+            timeactive = self.get_argument('timeactive')
+            namespace  = username+"-ns"
+            cpulimit   = self.get_argument('cpulimit')
+            memlimit   = self.get_argument('memlimit')
+            podlimit   = self.get_argument('podlimit')
 
-            CreateUser(db, username, userclass, namespace, cpulimit, memlimit, podlimit)
+            CreateUser(db, username, userclass, namespace, cpulimit, memlimit, podlimit, timeactive)
             self.redirect('/lsstsim')
         except Exception as e:
             self.render('NotFound.html', errormessage="{}".format(e))
@@ -388,6 +393,11 @@ application = tornado.web.Application([
 ],**settings)
 
 if __name__=="__main__":
+    try:
+        kd.create_priority_class('privilaged', 1000,)
+        kd.create_priority_class('common',     500, default=True)
+    except:
+        pass
     print("server running at localhost:8888 ...")
     ("press ctrl+c to close.")
     application.listen(8888)

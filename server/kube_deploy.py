@@ -44,6 +44,38 @@ def getNodeInfo(name):
     except ApiException as e:
         print("Exception when calling CoreV1Api->read_node: %s\n" % e)
 
+def create_priority_class(name, level, default=False):
+    try:
+        config.load_kube_config()
+    except:
+        config.load_incluster_config()
+
+    api = client.SchedulingV1beta1Api()
+    pretty = 'true'
+
+    body = client.V1beta1PriorityClass(value=level, global_default=default, metadata=client.V1ObjectMeta(name=name))
+
+
+    try:
+        api_response = api.create_priority_class(body, pretty=pretty)
+        return api_response
+    except ApiException as e:
+        print("Exception when calling SchedulingV1alpha1Api->create_priority_class: %s\n" % e)
+
+def list_priority_class():
+    try:
+        config.load_kube_config()
+    except:
+        config.load_incluster_config()
+
+    api = client.SchedulingV1alpha1Api()
+
+    try:
+        api_response = api.list_priority_class()
+        return api_response
+    except ApiException as e:
+        print("Exception when calling SchedulingV1alpha1Api->list_priority_class: %s\n" % e)
+
 def list_deployments(namespace):
     try:
         config.load_kube_config()
@@ -54,7 +86,7 @@ def list_deployments(namespace):
         api_response = api.list_namespaced_deployment(namespace)
         return api_response
     except ApiException as e:
-        print("Exception when calling SchedulingV1alpha1Api->list_deployment: %s\n" % e)
+        print("Exception when calling SchedulingV1alpha1Api->list_namespaced_deployment: %s\n" % e)
 
 def create_namespace(name):
     try:
@@ -99,7 +131,7 @@ def create_limitrange(namespace, maxmem="500Mi", maxcpu="999m"):
     except ApiException as e:
         print("Exception when calling CoreV1Api->create_namespaced_limit_range: %s\n" % e)
 
-def create_quota(namespace, maxmem="0Mi", maxcpu="0m", maxpods="0"):
+def create_quota(namespace, maxmem="0Mi", maxcpu="0m", maxpods="0",priorityclass="common"):
     try:
         config.load_kube_config()
     except:
@@ -112,7 +144,10 @@ def create_quota(namespace, maxmem="0Mi", maxcpu="0m", maxpods="0"):
                 kind="ResourceQuota",
                 metadata=client.V1ObjectMeta(name=namespace, namespace=namespace),
                 spec=client.V1ResourceQuotaSpec(
-                    hard={"cpu":maxcpu, "memory":maxmem, "pods":maxpods}
+                    hard={"cpu":maxcpu, "memory":maxmem, "pods":maxpods},
+                    scope_selector=client.V1ScopeSelector(match_expressions=[
+                        client.V1ScopedResourceSelectorRequirement(operator="In",scope_name="ResourceQuota", values=[priorityclass])
+                    ])
                 )
             )
     pretty = 'true'
@@ -122,7 +157,7 @@ def create_quota(namespace, maxmem="0Mi", maxcpu="0m", maxpods="0"):
     except ApiException as e:
         print("Exception when calling CoreV1Api->create_namespaced_limit_range: %s\n" % e)
 
-def create_deployment(namespace, name, cpulim, memlim, podlim):
+def create_deployment(namespace, name, cpulim, memlim, podlim,priorityclass):
     try:
         config.load_kube_config()
     except:
@@ -144,7 +179,7 @@ def create_deployment(namespace, name, cpulim, memlim, podlim):
                 selector=client.V1LabelSelector(match_labels={"app":name}),
                 template = client.V1PodTemplateSpec(
                        metadata=client.V1ObjectMeta(name=name, namespace=namespace,labels={"app": name}),
-                       spec=client.V1PodSpec(containers=[container])
+                       spec=client.V1PodSpec(containers=[container],priority_class_name=priorityclass)
                        )
             )
         )
@@ -200,7 +235,7 @@ def delete_cronjob(namespace):
     except ApiException as e:
         print("Exception when calling BatchV1beta1Api->delete_namespaced_cron_job: %s\n" % e)
 
-def update_quota(name, namespace, maxmem="0Mi", maxcpu="0m", maxpods="0"):
+def update_quota(name, namespace, maxmem="0Mi", maxcpu="0m", maxpods="0", priorityclass="common"):
     try:
         config.load_kube_config()
     except:
@@ -213,7 +248,10 @@ def update_quota(name, namespace, maxmem="0Mi", maxcpu="0m", maxpods="0"):
                 kind="ResourceQuota",
                 metadata=client.V1ObjectMeta(name=namespace, namespace=namespace),
                 spec=client.V1ResourceQuotaSpec(
-                    hard={"cpu":maxcpu, "memory":maxmem, "pods":maxpods}
+                    hard={"cpu":maxcpu, "memory":maxmem, "pods":maxpods},
+                    scope_selector=client.V1ScopeSelector(match_expressions=[
+                        client.V1ScopedResourceSelectorRequirement(operator="In",scope_name="PriorityClass", values=[priorityclass])
+                    ])
                 )
             )
     pretty = 'true'
@@ -276,9 +314,9 @@ def delete_all_deployments(namespace):
     except ApiException as e:
         print("Exception when calling ExtensionsV1beta1Api->delete_namespaced_deployment: %s\n" % e)
 
-def namespace_cleanup(namespace):
+def namespace_cleanup(namespace, priorityclass="common"):
     delete_all_deployments(namespace)
-    update_quota(namespace, namespace, maxmem='0Mi', maxcpu='0m', maxpods='0')
+    update_quota(namespace, namespace, maxmem='0Mi', maxcpu='0m', maxpods='0', priorityclass=priorityclass)
 
 def main(action='', user='test', token='qwerty', passwd=None):
     print("Call functions directly")
